@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Briefcase, Calendar, Users, MessageSquare, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Briefcase, Calendar, Users, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface MenuItem {
   title: string;
@@ -42,6 +42,11 @@ const Sidebar = () => {
             title: 'My Applications',
             path: '/freelance/applications',
             active: location.pathname === '/freelance/applications',
+          },
+          {
+            title: 'My Gigs',
+            path: '/freelance/my-gigs',
+            active: location.pathname === '/freelance/my-gigs',
           },
         ],
       },
