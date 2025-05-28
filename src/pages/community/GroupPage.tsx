@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import socketService from '../../services/socket';
+import { toast } from 'react-hot-toast';
 import { Send, Image as ImageIcon, Users, Settings } from 'lucide-react';
 
 interface Message {
@@ -41,42 +43,120 @@ const GroupPage: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    let isComponentMounted = true;
+    let connectionCheckInterval: number;
+
     const fetchGroupData = async () => {
+      if (!isComponentMounted) return;
+      
+      setLoading(true);
       try {
-        const response = await axios.get(`/api/community/groups/${id}`);
-        setGroup(response.data);
-        setIsAdmin(response.data.members.some((member: any) => 
-          member._id === localStorage.getItem('userId') && member.role === 'admin'
-        ));
-        setLoading(false);
+        console.log('Fetching group data for ID:', id);
+        socketService.emit('get_group', { groupId: id }, (response: any) => {
+          if (!isComponentMounted) return;
+          
+          console.log('Group data response:', response);
+          if (response.error) {
+            console.error('Error fetching group:', response.error);
+            setError('Failed to fetch group data');
+            setLoading(false);
+            return;
+          }
+          if (!response.data) {
+            console.error('No group data received');
+            setError('Group data not found');
+            setLoading(false);
+            return;
+          }
+          setGroup(response.data);
+          setIsAdmin(response.data.members.some((member: any) => 
+            member._id === localStorage.getItem('userId') && member.role === 'admin'
+          ));
+          setLoading(false);
+        });
       } catch (err) {
+        if (!isComponentMounted) return;
+        console.error('Error in fetchGroupData:', err);
         setError('Failed to fetch group data');
         setLoading(false);
       }
     };
 
     const fetchMessages = async () => {
+      if (!isComponentMounted) return;
+      
       try {
-        const response = await axios.get(`/api/community/groups/${id}/messages`);
-        setMessages(response.data);
+        console.log('Fetching messages for group:', id);
+        socketService.emit('get_group_messages', { groupId: id }, (response: any) => {
+          if (!isComponentMounted) return;
+          
+          console.log('Messages response:', response);
+          if (response.error) {
+            console.error('Error fetching messages:', response.error);
+            setError('Failed to fetch messages');
+            return;
+          }
+          if (response.messages) {
+            setMessages(response.messages);
+          }
+        });
       } catch (err) {
+        if (!isComponentMounted) return;
+        console.error('Error in fetchMessages:', err);
         setError('Failed to fetch messages');
       }
     };
 
-    fetchGroupData();
-    fetchMessages();
+    const setupSocket = () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        toast.error('Please log in to use chat features');
+        setLoading(false);
+        return;
+      }
 
-    // Set up WebSocket connection for real-time messages
-    const ws = new WebSocket(`ws://localhost:5000/ws/group/${id}`);
-    
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages(prev => [...prev, message]);
+      console.log('Connecting to socket...');
+      socketService.connect(token);
+      
+      connectionCheckInterval = setInterval(() => {
+        if (!isComponentMounted) {
+          clearInterval(connectionCheckInterval);
+          return;
+        }
+
+        if (socketService.isConnected()) {
+          console.log('Socket connected, joining group...');
+          clearInterval(connectionCheckInterval);
+          socketService.joinGroup(id!);
+          fetchGroupData();
+          fetchMessages();
+        }
+      }, 1000);
     };
 
+    setupSocket();
+
+    // Listen for new messages
+    socketService.onGroupMessage((message: Message) => {
+      if (!isComponentMounted) return;
+      console.log('New message received:', message);
+      setMessages(prev => [...prev, message]);
+    });
+
+    // Listen for errors
+    socketService.onGroupError((error: { message: string }) => {
+      if (!isComponentMounted) return;
+      console.error('Group error:', error);
+      toast.error(error.message);
+    });
+
     return () => {
-      ws.close();
+      isComponentMounted = false;
+      clearInterval(connectionCheckInterval);
+      socketService.leaveGroup(id!);
+      socketService.off('group_message');
+      socketService.off('group_error');
     };
   }, [id]);
 
@@ -85,13 +165,10 @@ const GroupPage: React.FC = () => {
     if (!newMessage.trim()) return;
 
     try {
-      await axios.post(`/api/community/groups/${id}/messages`, {
-        content: newMessage,
-        type: 'text'
-      });
+      socketService.sendGroupMessage(id!, newMessage.trim());
       setNewMessage('');
     } catch (err) {
-      setError('Failed to send message');
+      toast.error('Failed to send message');
     }
   };
 
@@ -103,20 +180,27 @@ const GroupPage: React.FC = () => {
     formData.append('image', file);
 
     try {
-      await axios.post(`/api/community/groups/${id}/messages`, formData, {
+      const response = await axios.post(`/api/community/groups/${id}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+      
+      if (response.data.imageUrl) {
+        socketService.sendGroupMessage(id!, '', 'image', response.data.imageUrl);
+      }
     } catch (err) {
-      setError('Failed to upload image');
+      toast.error('Failed to upload image');
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading group data...</p>
+        </div>
       </div>
     );
   }
@@ -160,16 +244,16 @@ const GroupPage: React.FC = () => {
                 {member.avatar ? (
                   <img
                     src={member.avatar}
-                    alt={member.name}
+                    alt={member.name || 'User'}
                     className="h-8 w-8 rounded-full mr-2"
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center">
-                    {member.name[0]}
+                    {(member.name || 'U')[0]}
                   </div>
                 )}
                 <span className="text-sm">
-                  {member.name}
+                  {member.name || 'Unknown User'}
                   {member.role === 'admin' && (
                     <span className="ml-2 text-xs text-blue-500">(Admin)</span>
                   )}
@@ -181,7 +265,7 @@ const GroupPage: React.FC = () => {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-full">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => (
@@ -223,33 +307,35 @@ const GroupPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Message Input */}
-        <form onSubmit={handleSendMessage} className="border-t border-gray-200 p-4">
-          <div className="flex items-center space-x-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full">
+        {/* Message Input - Fixed at bottom */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200">
+          <form onSubmit={handleSendMessage} className="p-4">
+            <div className="flex items-center space-x-2">
               <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <ImageIcon className="h-5 w-5 text-gray-500" />
-            </label>
-            <button
-              type="submit"
-              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          </div>
-        </form>
+              <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <ImageIcon className="h-5 w-5 text-gray-500" />
+              </label>
+              <button
+                type="submit"
+                className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
+              >
+                <Send className="h-5 w-5" />
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

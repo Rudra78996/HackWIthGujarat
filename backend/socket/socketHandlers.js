@@ -1,11 +1,19 @@
 import Message from '../models/messageModel.js';
 import DirectChat from '../models/directChatModel.js';
-import Group from '../models/groupModel.js';
+import Group from '../models/Group.js';
 
 export const setupSocketHandlers = (io) => {
   const connectedUsers = new Map();
 
   io.on('connection', (socket) => {
+    console.log('New socket connection attempt');
+    
+    if (!socket.user || !socket.user._id) {
+      console.error('Socket connection rejected: No user data');
+      socket.disconnect();
+      return;
+    }
+
     const userId = socket.user._id.toString();
     console.log(`User connected: ${userId}`);
     
@@ -17,21 +25,147 @@ export const setupSocketHandlers = (io) => {
       onlineUsers: Array.from(connectedUsers.keys())
     });
 
-    // Join room
-    socket.on('join_room', ({ roomId }) => {
-      console.log(`User ${userId} joined room: ${roomId}`);
-      socket.join(roomId);
+    // Handle get_group event
+    socket.on('get_group', async ({ groupId }, callback) => {
+      try {
+        console.log(`Fetching group data for ID: ${groupId}`);
+        const group = await Group.findById(groupId)
+          .populate('members.user', 'name profilePicture')
+          .populate('members.role');
+
+        if (!group) {
+          if (typeof callback === 'function') {
+            callback({ error: 'Group not found' });
+          }
+          return;
+        }
+
+        if (typeof callback === 'function') {
+          callback({ data: group });
+        }
+      } catch (error) {
+        console.error('Error fetching group:', error);
+        if (typeof callback === 'function') {
+          callback({ error: 'Failed to fetch group data' });
+        }
+      }
     });
 
-    // Leave room
-    socket.on('leave_room', ({ roomId }) => {
-      console.log(`User ${userId} left room: ${roomId}`);
-      socket.leave(roomId);
+    // Handle get_group_messages event
+    socket.on('get_group_messages', async ({ groupId }, callback) => {
+      try {
+        console.log(`Fetching messages for group: ${groupId}`);
+        const messages = await Message.find({ chat: groupId, chatType: 'group' })
+          .populate('sender', 'name profilePicture')
+          .sort({ createdAt: 1 });
+
+        if (typeof callback === 'function') {
+          callback({ messages });
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        if (typeof callback === 'function') {
+          callback({ error: 'Failed to fetch messages' });
+        }
+      }
+    });
+
+    // Handle group_message event
+    socket.on('group_message', async ({ groupId, content, type, imageUrl }, callback) => {
+      try {
+        console.log(`User ${userId} sending message to group ${groupId}`);
+        
+        const group = await Group.findById(groupId);
+        if (!group) {
+          if (typeof callback === 'function') {
+            callback({ error: 'Group not found' });
+          }
+          return;
+        }
+
+        const isMember = group.members.some(m => m.user.toString() === userId);
+        if (!isMember) {
+          if (typeof callback === 'function') {
+            callback({ error: 'Not authorized to send message to this group' });
+          }
+          return;
+        }
+
+        const message = await Message.create({
+          sender: userId,
+          content,
+          type,
+          imageUrl,
+          chatType: 'group',
+          chat: groupId,
+          chatModel: 'Group',
+          readBy: [{ user: userId }]
+        });
+
+        const populatedMessage = await Message.findById(message._id)
+          .populate('sender', 'name profilePicture')
+          .populate('readBy.user', 'name profilePicture');
+
+        io.to(groupId).emit('group_message', populatedMessage);
+        if (typeof callback === 'function') {
+          callback({ success: true, message: populatedMessage });
+        }
+      } catch (error) {
+        console.error('Send message error:', error);
+        if (typeof callback === 'function') {
+          callback({ error: error.message });
+        }
+      }
+    });
+
+    // Handle join_group event
+    socket.on('join_group', async ({ groupId }) => {
+      try {
+        console.log(`User ${userId} joining group: ${groupId}`);
+        
+        const group = await Group.findById(groupId);
+        if (!group) {
+          socket.emit('group_error', { message: 'Group not found' });
+          return;
+        }
+
+        const isMember = group.members.some(m => m.user.toString() === userId);
+        if (!isMember) {
+          socket.emit('group_error', { message: 'Not authorized to join this group' });
+          return;
+        }
+
+        socket.join(groupId);
+        socket.to(groupId).emit('user_joined', {
+          userId,
+          userName: socket.user.name
+        });
+      } catch (error) {
+        console.error('Error joining group:', error);
+        socket.emit('group_error', { message: 'Error joining group' });
+      }
+    });
+
+    // Handle leave_group event
+    socket.on('leave_group', ({ groupId }) => {
+      console.log(`User ${userId} leaving group: ${groupId}`);
+      socket.leave(groupId);
+      socket.to(groupId).emit('user_left', {
+        userId,
+        userName: socket.user.name
+      });
     });
 
     // Send message to room
     socket.on('send_message', async ({ roomId, chatType, content, attachments = [] }) => {
       try {
+        if (!roomId || !chatType || !content) {
+          socket.emit('error', { message: 'Missing required fields' });
+          return;
+        }
+
+        console.log(`User ${userId} sending message to room ${roomId}`);
+        
         let chatModel;
         let chat;
 
@@ -83,6 +217,7 @@ export const setupSocketHandlers = (io) => {
 
         // Emit message to room
         io.to(roomId).emit('new_message', populatedMessage);
+        console.log(`Message sent to room ${roomId}`);
       } catch (error) {
         console.error('Send message error:', error);
         socket.emit('error', { message: error.message });
@@ -91,6 +226,11 @@ export const setupSocketHandlers = (io) => {
 
     // Handle typing status
     socket.on('typing', ({ roomId, isTyping }) => {
+      if (!roomId) {
+        socket.emit('error', { message: 'Room ID is required' });
+        return;
+      }
+
       socket.to(roomId).emit('user_typing', {
         userId,
         userName: socket.user.name,
@@ -101,6 +241,11 @@ export const setupSocketHandlers = (io) => {
     // Mark messages as read
     socket.on('mark_as_read', async ({ messageId }) => {
       try {
+        if (!messageId) {
+          socket.emit('error', { message: 'Message ID is required' });
+          return;
+        }
+
         const message = await Message.findById(messageId);
         
         if (!message) {

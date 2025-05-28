@@ -1,26 +1,74 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Image as ImageIcon } from 'lucide-react';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const CreateGroupPage: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    category: 'Other',
     isPrivate: false,
     image: null as File | null
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    description?: string;
+    category?: string;
+  }>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const validateForm = () => {
+    const errors: {
+      name?: string;
+      description?: string;
+      category?: string;
+    } = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = 'Group name is required';
+    } else if (formData.name.trim().length < 3) {
+      errors.name = 'Group name must be at least 3 characters long';
+    } else if (formData.name.trim().length > 50) {
+      errors.name = 'Group name cannot exceed 50 characters';
+    }
+
+    // Description validation
+    if (!formData.description.trim()) {
+      errors.description = 'Description is required';
+    } else if (formData.description.trim().length < 10) {
+      errors.description = 'Description must be at least 10 characters long';
+    } else if (formData.description.trim().length > 1000) {
+      errors.description = 'Description cannot exceed 1000 characters';
+    }
+
+    // Category validation
+    if (!formData.category) {
+      errors.category = 'Category is required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
+    // Clear validation error when user starts typing
+    if (validationErrors[name as keyof typeof validationErrors]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,24 +84,27 @@ const CreateGroupPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('isPrivate', String(formData.isPrivate));
-      if (formData.image) {
-        formDataToSend.append('image', formData.image);
-      }
+    // Validate form before submission
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
-      const response = await axios.post('/api/community/groups', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+    try {
+      const response = await api.post('/community/groups', {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        isPrivate: formData.isPrivate
       });
 
+      toast.success('Group created successfully!');
       navigate(`/community/groups/${response.data._id}`);
-    } catch (err) {
-      setError('Failed to create group');
+    } catch (err: any) {
+      console.error('Error creating group:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create group';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -121,9 +172,44 @@ const CreateGroupPage: React.FC = () => {
             value={formData.name}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              validationErrors.name ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Enter group name"
           />
+          {validationErrors.name && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+          )}
+        </div>
+
+        {/* Category */}
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+            Category
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            required
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              validationErrors.category ? 'border-red-500' : 'border-gray-300'
+            }`}
+          >
+            <option value="Web Development">Web Development</option>
+            <option value="Mobile Development">Mobile Development</option>
+            <option value="UI/UX Design">UI/UX Design</option>
+            <option value="Data Science">Data Science</option>
+            <option value="DevOps">DevOps</option>
+            <option value="Blockchain">Blockchain</option>
+            <option value="Career">Career</option>
+            <option value="Open Source">Open Source</option>
+            <option value="Other">Other</option>
+          </select>
+          {validationErrors.category && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.category}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -138,9 +224,14 @@ const CreateGroupPage: React.FC = () => {
             onChange={handleChange}
             required
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              validationErrors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="Describe your group's purpose and topics"
           />
+          {validationErrors.description && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+          )}
         </div>
 
         {/* Privacy Setting */}
@@ -159,11 +250,11 @@ const CreateGroupPage: React.FC = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end space-x-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 mr-4"
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
           >
             Cancel
           </button>

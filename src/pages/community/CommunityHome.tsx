@@ -2,6 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  withCredentials: true,
+  timeout: 5000, // 5 second timeout
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+});
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ERR_NETWORK') {
+      console.error('Network error - Is the backend server running?');
+      return Promise.reject(new Error('Unable to connect to the server. Please check if the backend is running.'));
+    }
+    if (error.response?.status === 401) {
+      console.error('Authentication error - Please log in');
+      return Promise.reject(new Error('Please log in to access this resource'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 interface Post {
   _id: string;
   title: string;
@@ -35,15 +62,21 @@ const CommunityHome: React.FC = () => {
     const fetchData = async () => {
       try {
         if (activeTab === 'posts') {
-          const response = await axios.get('/api/community/posts');
+          const response = await api.get('/community/posts');
+          // console.log('Posts response:', response.data);
+          if (!Array.isArray(response.data)) {
+            throw new Error('Expected an array of posts from the API');
+          }
           setPosts(response.data);
         } else {
-          const response = await axios.get('/api/community/groups');
+          const response = await api.get('/community/groups');
+          console.log('Groups response:', response.data);
           setGroups(response.data);
         }
         setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch data');
+      } catch (err: any) {
+        console.error('Error fetching data:', err);
+        setError(err.response?.data?.message || 'Failed to fetch data');
         setLoading(false);
       }
     };
