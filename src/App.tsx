@@ -30,6 +30,8 @@ const CommunityHome = lazy(() => import('./pages/community/CommunityHome'));
 const GroupPage = lazy(() => import('./pages/community/GroupPage'));
 const DirectMessagePage = lazy(() => import('./pages/community/DirectMessagePage'));
 const CreateGroupPage = lazy(() => import('./pages/community/CreateGroupPage'));
+const CreatePost = lazy(() => import('./pages/community/CreatePost'));
+const PostDetail = lazy(() => import('./pages/community/PostDetail'));
 
 // Error and not found
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
@@ -80,6 +82,8 @@ function App() {
                 <Route path="groups/:id" element={<GroupPage />} />
                 <Route path="messages/:id" element={<DirectMessagePage />} />
                 <Route path="create-group" element={<CreateGroupPage />} />
+                <Route path="create-post" element={<CreatePost />} />
+                <Route path="posts/:id" element={<PostDetail />} />
               </Route>
             </Route>
             
