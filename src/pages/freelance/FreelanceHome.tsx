@@ -1,8 +1,23 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Briefcase, Search, TrendingUp, Users } from 'lucide-react';
+import { useState } from 'react';
 
 const FreelanceHome = () => {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/freelance/gigs?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleCategoryClick = (category: string) => {
+    navigate(`/freelance/gigs?category=${encodeURIComponent(category)}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -19,14 +34,21 @@ const FreelanceHome = () => {
           </p>
           
           {/* Search Bar */}
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for gigs, skills, or keywords..."
               className="w-full pl-12 pr-4 py-3 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
-            <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
-          </div>
+            <button 
+              type="submit"
+              className="absolute left-4 top-3.5 text-gray-400 hover:text-gray-600"
+            >
+              <Search size={20} />
+            </button>
+          </form>
         </div>
       </div>
 
@@ -73,16 +95,16 @@ const FreelanceHome = () => {
             'Data Science',
             'Blockchain',
           ].map((category, index) => (
-            <Link
+            <button
               key={index}
-              to={`/freelance/gigs?category=${category}`}
-              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+              onClick={() => handleCategoryClick(category)}
+              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow text-left"
             >
               <h3 className="font-medium text-lg mb-2">{category}</h3>
               <p className="text-gray-600 text-sm">
                 Find opportunities in {category.toLowerCase()}
               </p>
-            </Link>
+            </button>
           ))}
         </div>
       </section>

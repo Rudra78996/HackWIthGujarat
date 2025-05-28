@@ -1,7 +1,83 @@
 import { motion } from 'framer-motion';
 import { Calendar, Clock, DollarSign, MapPin, Briefcase, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+interface Gig {
+  _id: string;
+  title: string;
+  description: string;
+  skills: string[];
+  budget: number;
+  duration: string;
+  location: string;
+  experience: string;
+  postedBy: {
+    _id: string;
+    name: string;
+    profilePicture?: string;
+  };
+  createdAt: string;
+  category: string;
+  deadline: string;
+  status: 'Open' | 'In Progress' | 'Completed' | 'Cancelled';
+}
 
 const GigDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [gig, setGig] = useState<Gig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchGigDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://localhost:5000/api/gigs/${id}`);
+        setGig(response.data);
+        setError(null);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to fetch gig details');
+        toast.error('Failed to fetch gig details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchGigDetails();
+    }
+  }, [id]);
+
+  const handleApply = () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to apply for gigs');
+      navigate('/login');
+      return;
+    }
+    // TODO: Implement apply functionality
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (error || !gig) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-600">{error || 'Gig not found'}</div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -13,33 +89,38 @@ const GigDetailPage = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-4">Senior React Developer Needed</h1>
+            <h1 className="text-3xl font-bold mb-4">{gig.title}</h1>
             <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
               <div className="flex items-center">
                 <DollarSign size={18} className="mr-2" />
-                $80-100/hr
+                ₹{gig.budget}
               </div>
               <div className="flex items-center">
                 <Clock size={18} className="mr-2" />
-                Full-time
+                {gig.duration}
               </div>
               <div className="flex items-center">
                 <MapPin size={18} className="mr-2" />
-                Remote
+                {gig.location}
               </div>
               <div className="flex items-center">
                 <Calendar size={18} className="mr-2" />
-                Posted 2 days ago
+                {new Date(gig.createdAt).toLocaleDateString()}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="badge-primary">React</span>
-              <span className="badge-primary">TypeScript</span>
-              <span className="badge-primary">Node.js</span>
-              <span className="badge-primary">AWS</span>
+              {gig.skills.map((skill, index) => (
+                <span key={index} className="badge-primary">{skill}</span>
+              ))}
             </div>
           </div>
-          <button className="btn-primary">Apply Now</button>
+          <button 
+            onClick={handleApply}
+            className="btn-primary"
+            disabled={gig.status !== 'Open'}
+          >
+            {gig.status === 'Open' ? 'Apply Now' : 'Not Accepting Applications'}
+          </button>
         </div>
       </div>
 
@@ -49,13 +130,7 @@ const GigDetailPage = () => {
           {/* Description */}
           <section className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-xl font-bold mb-4">Project Description</h2>
-            <p className="text-gray-600 mb-4">
-              We are looking for a senior React developer to join our team and help build a new SaaS platform. 
-              The ideal candidate will have strong experience with React, TypeScript, and modern frontend development practices.
-            </p>
-            <p className="text-gray-600">
-              This is a long-term project with potential for extension based on performance.
-            </p>
+            <p className="text-gray-600 whitespace-pre-wrap">{gig.description}</p>
           </section>
 
           {/* Requirements */}
@@ -63,11 +138,11 @@ const GigDetailPage = () => {
             <h2 className="text-xl font-bold mb-4">Requirements</h2>
             <ul className="space-y-3">
               {[
-                '5+ years of experience with React and modern JavaScript',
-                'Strong TypeScript skills',
-                'Experience with state management (Redux, MobX, etc.)',
-                'Understanding of CI/CD practices',
-                'Excellent communication skills',
+                `Experience Level: ${gig.experience}`,
+                `Category: ${gig.category}`,
+                `Duration: ${gig.duration}`,
+                `Location: ${gig.location}`,
+                `Deadline: ${new Date(gig.deadline).toLocaleDateString()}`,
               ].map((req, index) => (
                 <li key={index} className="flex items-start">
                   <CheckCircle size={20} className="text-primary-600 mr-3 flex-shrink-0 mt-1" />
@@ -85,16 +160,16 @@ const GigDetailPage = () => {
             <h3 className="text-lg font-bold mb-4">About the Client</h3>
             <div className="space-y-3 text-gray-600">
               <p>
-                <strong>Company:</strong> TechCorp Inc.
+                <strong>Name:</strong> {gig.postedBy.name}
               </p>
               <p>
-                <strong>Location:</strong> San Francisco, CA
+                <strong>Location:</strong> {gig.location}
               </p>
               <p>
-                <strong>Company Size:</strong> 50-100 employees
+                <strong>Experience Required:</strong> {gig.experience}
               </p>
               <p>
-                <strong>Industry:</strong> SaaS/Technology
+                <strong>Project Status:</strong> {gig.status}
               </p>
             </div>
           </div>
@@ -104,13 +179,16 @@ const GigDetailPage = () => {
             <h3 className="text-lg font-bold mb-4">Project Details</h3>
             <div className="space-y-3 text-gray-600">
               <p>
-                <strong>Duration:</strong> 6+ months
+                <strong>Duration:</strong> {gig.duration}
               </p>
               <p>
-                <strong>Hours:</strong> 40 hrs/week
+                <strong>Budget:</strong> ₹{gig.budget}
               </p>
               <p>
-                <strong>Experience:</strong> Senior
+                <strong>Category:</strong> {gig.category}
+              </p>
+              <p>
+                <strong>Posted:</strong> {new Date(gig.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>

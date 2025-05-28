@@ -19,6 +19,7 @@ const FreelanceHome = lazy(() => import('./pages/freelance/FreelanceHome'));
 const GigListingPage = lazy(() => import('./pages/freelance/GigListingPage'));
 const GigDetailPage = lazy(() => import('./pages/freelance/GigDetailPage'));
 const CreateGigPage = lazy(() => import('./pages/freelance/CreateGigPage'));
+const EditGigPage = lazy(() => import('./pages/freelance/EditGigPage'));
 const FreelanceProfilePage = lazy(() => import('./pages/freelance/FreelanceProfilePage'));
 
 // Event pages
@@ -67,6 +68,7 @@ function App() {
                 <Route path="gigs" element={<GigListingPage />} />
                 <Route path="gigs/:id" element={<GigDetailPage />} />
                 <Route path="create-gig" element={<CreateGigPage />} />
+                <Route path="edit-gig/:id" element={<EditGigPage />} />
                 <Route path="profile/:id" element={<FreelanceProfilePage />} />
                 <Route path="applications" element={<MyApplicationsPage />} />
                 <Route path="my-gigs" element={<MyGigsPage />} />

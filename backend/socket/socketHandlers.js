@@ -30,8 +30,10 @@ export const setupSocketHandlers = (io) => {
       try {
         console.log(`Fetching group data for ID: ${groupId}`);
         const group = await Group.findById(groupId)
-          .populate('members.user', 'name profilePicture')
-          .populate('members.role');
+          .populate({
+            path: 'members.user',
+            select: 'name profilePicture'
+          });
 
         if (!group) {
           if (typeof callback === 'function') {
@@ -40,6 +42,7 @@ export const setupSocketHandlers = (io) => {
           return;
         }
 
+        console.log('Group members:', group.members);
         if (typeof callback === 'function') {
           callback({ data: group });
         }
@@ -59,6 +62,8 @@ export const setupSocketHandlers = (io) => {
           .populate('sender', 'name profilePicture')
           .sort({ createdAt: 1 });
 
+        console.log(`Found ${messages.length} messages for group ${groupId}`);
+        
         if (typeof callback === 'function') {
           callback({ messages });
         }
@@ -70,90 +75,52 @@ export const setupSocketHandlers = (io) => {
       }
     });
 
-    // Handle group_message event
-    socket.on('group_message', async ({ groupId, content, type, imageUrl }, callback) => {
-      try {
-        console.log(`User ${userId} sending message to group ${groupId}`);
-        
-        const group = await Group.findById(groupId);
-        if (!group) {
-          if (typeof callback === 'function') {
-            callback({ error: 'Group not found' });
-          }
-          return;
-        }
-
-        const isMember = group.members.some(m => m.user.toString() === userId);
-        if (!isMember) {
-          if (typeof callback === 'function') {
-            callback({ error: 'Not authorized to send message to this group' });
-          }
-          return;
-        }
-
-        const message = await Message.create({
-          sender: userId,
-          content,
-          type,
-          imageUrl,
-          chatType: 'group',
-          chat: groupId,
-          chatModel: 'Group',
-          readBy: [{ user: userId }]
-        });
-
-        const populatedMessage = await Message.findById(message._id)
-          .populate('sender', 'name profilePicture')
-          .populate('readBy.user', 'name profilePicture');
-
-        io.to(groupId).emit('group_message', populatedMessage);
-        if (typeof callback === 'function') {
-          callback({ success: true, message: populatedMessage });
-        }
-      } catch (error) {
-        console.error('Send message error:', error);
-        if (typeof callback === 'function') {
-          callback({ error: error.message });
-        }
-      }
-    });
-
     // Handle join_group event
     socket.on('join_group', async ({ groupId }) => {
       try {
         console.log(`User ${userId} joining group: ${groupId}`);
         
-        const group = await Group.findById(groupId);
+        const group = await Group.findById(groupId)
+          .populate('members.user', 'name profilePicture');
+        
         if (!group) {
+          console.error('Group not found:', groupId);
           socket.emit('group_error', { message: 'Group not found' });
           return;
         }
 
-        const isMember = group.members.some(m => m.user.toString() === userId);
-        if (!isMember) {
-          socket.emit('group_error', { message: 'Not authorized to join this group' });
+        // Check if user is already a member
+        const isMember = group.members.some(member => member.user._id.toString() === userId);
+        if (isMember) {
+          console.log(`User ${userId} is already a member of group ${groupId}`);
+          socket.join(groupId);
           return;
         }
 
+        // Add user to group members
+        group.members.push({
+          user: userId,
+          role: 'member',
+          joinedAt: new Date()
+        });
+
+        // Save the updated group
+        await group.save();
+
+        // Join socket room
         socket.join(groupId);
+
+        // Notify other users
         socket.to(groupId).emit('user_joined', {
           userId,
           userName: socket.user.name
         });
+
+        console.log(`User ${userId} successfully joined group ${groupId}`);
       } catch (error) {
         console.error('Error joining group:', error);
         socket.emit('group_error', { message: 'Error joining group' });
       }
-    });
-
-    // Handle leave_group event
-    socket.on('leave_group', ({ groupId }) => {
-      console.log(`User ${userId} leaving group: ${groupId}`);
-      socket.leave(groupId);
-      socket.to(groupId).emit('user_left', {
-        userId,
-        userName: socket.user.name
-      });
     });
 
     // Send message to room
@@ -277,17 +244,46 @@ export const setupSocketHandlers = (io) => {
       }
     });
 
+    // Handle group_message event
+    socket.on('group_message', async ({ groupId, content, type }) => {
+      try {
+        console.log('Received group message:', { groupId, content, type });
+        
+        const group = await Group.findById(groupId);
+        if (!group) {
+          console.error('Group not found:', groupId);
+          socket.emit('group_error', { message: 'Group not found' });
+          return;
+        }
+
+        // Create new message
+        const message = await Message.create({
+          sender: userId,
+          content,
+          type,
+          chat: groupId,
+          chatType: 'group',
+          chatModel: 'Group'
+        });
+
+        // Populate sender details
+        const populatedMessage = await Message.findById(message._id)
+          .populate('sender', 'name profilePicture');
+
+        console.log('Created message:', populatedMessage);
+
+        // Emit to all users in the group
+        io.to(groupId).emit('group_message', populatedMessage);
+        console.log('Message emitted to group:', groupId);
+      } catch (error) {
+        console.error('Error handling group message:', error);
+        socket.emit('group_error', { message: 'Error sending message' });
+      }
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${userId}`);
-      
-      // Remove from connected users
-      connectedUsers.delete(userId);
-      
-      // Emit updated online users
-      io.emit('user_status_update', {
-        onlineUsers: Array.from(connectedUsers.keys())
-      });
+      console.log('disconnected');
     });
   });
 };
