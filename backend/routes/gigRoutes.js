@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get user's applications - Move this before the :id route
+// Get user's applications
 router.get('/my-applications', protect, async (req, res) => {
   try {
     const gigs = await Gig.find({
@@ -48,6 +48,32 @@ router.get('/my-applications', protect, async (req, res) => {
   } catch (error) {
     console.error('Error fetching applications:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Get user's posted gigs
+router.get('/my-gigs', protect, async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      console.error('User not found in request');
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    console.log("Getting user's posted gigs for user:", req.user._id);
+    
+    const gigs = await Gig.find({ postedBy: req.user._id })
+      .populate('applications.user', 'name profilePicture')
+      .sort({ createdAt: -1 });
+    
+    console.log(`Found ${gigs.length} gigs for user`);
+    return res.status(200).json(gigs);
+  } catch (error) {
+    console.error('Error in /my-gigs route:', error);
+    return res.status(500).json({ 
+      message: 'Failed to fetch gigs',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -181,32 +207,6 @@ router.post('/:id/apply', protect, async (req, res) => {
     res.status(200).json(gig);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  }
-});
-
-// Get user's posted gigs
-router.get('/my-gigs', protect, async (req, res) => {
-  try {
-    if (!req.user || !req.user._id) {
-      console.error('User not found in request');
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-
-    console.log("Getting user's posted gigs for user:", req.user._id);
-    
-    const gigs = await Gig.find({ postedBy: req.user._id })
-      .populate('applications.user', 'name profilePicture')
-      .sort({ createdAt: -1 });
-    
-    console.log(`Found ${gigs.length} gigs for user`);
-    return res.status(200).json(gigs);
-  } catch (error) {
-    console.error('Error in /my-gigs route:', error);
-    return res.status(500).json({ 
-      message: 'Failed to fetch gigs',
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
   }
 });
 
