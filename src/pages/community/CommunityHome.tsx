@@ -39,7 +39,15 @@ interface Post {
   };
   createdAt: string;
   likes: number;
-  comments: number;
+  comments: Array<{
+    _id: string;
+    content: string;
+    author: {
+      _id: string;
+      name: string;
+    };
+    createdAt: string;
+  }>;
   image?: string;
 }
 
@@ -163,12 +171,12 @@ const CommunityHome: React.FC = () => {
                     <p className="text-gray-600 mb-4 line-clamp-3">{post.content}</p>
                     <div className="flex justify-between items-center text-sm text-gray-500">
                       <div className="flex items-center space-x-4">
-                        <span>Posted by {post.author.name}</span>
+                        <span>Posted by {post.author?.name || 'Unknown'}</span>
                         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center space-x-4">
                         <span>{post.likes} likes</span>
-                        <span>{post.comments} comments</span>
+                        <span>{post.comments?.length || 0} comments</span>
                       </div>
                     </div>
                   </div>
