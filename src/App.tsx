@@ -5,6 +5,8 @@ import { useAuthStore } from './store/authStore';
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Loading from './components/ui/Loading';
+import MyApplicationsPage from './pages/freelance/MyApplicationsPage';
+import MyGigsPage from './pages/freelance/MyGigsPage';
 
 // Lazy loaded pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -64,6 +66,8 @@ function App() {
                 <Route path="gigs/:id" element={<GigDetailPage />} />
                 <Route path="create-gig" element={<CreateGigPage />} />
                 <Route path="profile/:id" element={<FreelanceProfilePage />} />
+                <Route path="applications" element={<MyApplicationsPage />} />
+                <Route path="my-gigs" element={<MyGigsPage />} />
               </Route>
               
               {/* Event Routes */}

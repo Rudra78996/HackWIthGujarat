@@ -37,7 +37,8 @@ const gigSchema = new mongoose.Schema(
       required: [true, 'Please specify the project duration']
     },
     deadline: {
-      type: Date
+      type: Date,
+      required: [true, 'Please specify the deadline']
     },
     location: {
       type: String,
