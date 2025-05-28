@@ -1,5 +1,44 @@
 import mongoose from 'mongoose';
 
+const applicationSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  coverLetter: {
+    type: String,
+    required: true
+  },
+  proposedBudget: {
+    type: Number,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Accepted', 'Rejected'],
+    default: 'Pending'
+  },
+  submittedAt: {
+    type: Date,
+    default: Date.now
+  },
+  paymentDetails: {
+    paymentId: String,
+    paymentStatus: {
+      type: String,
+      enum: ['Pending', 'Completed', 'Failed'],
+      default: 'Pending'
+    },
+    paymentDate: Date,
+    amount: Number,
+    currency: {
+      type: String,
+      default: 'INR'
+    }
+  }
+});
+
 const gigSchema = new mongoose.Schema(
   {
     title: {
@@ -60,25 +99,11 @@ const gigSchema = new mongoose.Schema(
       enum: ['Open', 'In Progress', 'Completed', 'Cancelled'],
       default: 'Open'
     },
-    applications: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'User'
-        },
-        coverLetter: String,
-        proposedBudget: Number,
-        status: {
-          type: String,
-          enum: ['Pending', 'Accepted', 'Rejected'],
-          default: 'Pending'
-        },
-        submittedAt: {
-          type: Date,
-          default: Date.now
-        }
-      }
-    ]
+    applications: [applicationSchema],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   },
   {
     timestamps: true

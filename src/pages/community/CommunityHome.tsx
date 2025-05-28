@@ -49,6 +49,12 @@ interface Group {
   description: string;
   memberCount: number;
   image?: string;
+  createdAt?: string;
+  members?: Array<{
+    _id: string;
+    name: string;
+    role: string;
+  }>;
 }
 
 const CommunityHome: React.FC = () => {
@@ -61,22 +67,25 @@ const CommunityHome: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         if (activeTab === 'posts') {
           const response = await api.get('/community/posts');
-          // console.log('Posts response:', response.data);
           if (!Array.isArray(response.data)) {
             throw new Error('Expected an array of posts from the API');
           }
           setPosts(response.data);
         } else {
           const response = await api.get('/community/groups');
-          console.log('Groups response:', response.data);
+          if (!Array.isArray(response.data)) {
+            throw new Error('Expected an array of groups from the API');
+          }
           setGroups(response.data);
         }
-        setLoading(false);
+        setError(null);
       } catch (err: any) {
         console.error('Error fetching data:', err);
         setError(err.response?.data?.message || 'Failed to fetch data');
+      } finally {
         setLoading(false);
       }
     };
@@ -139,7 +148,7 @@ const CommunityHome: React.FC = () => {
             </Link>
           </div>
 
-          {posts.length === 0 ? (
+          {!posts?.length ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No posts found</p>
             </div>
@@ -163,12 +172,12 @@ const CommunityHome: React.FC = () => {
                     <p className="text-gray-600 mb-4 line-clamp-3">{post.content}</p>
                     <div className="flex justify-between items-center text-sm text-gray-500">
                       <div className="flex items-center space-x-4">
-                        <span>Posted by {post.author.name}</span>
+                        <span>Posted by {post.author?.name || 'Anonymous'}</span>
                         <span>{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <span>{post.likes} likes</span>
-                        <span>{post.comments} comments</span>
+                        <span>{post.likes || 0} likes</span>
+                        <span>{post.comments || 0} comments</span>
                       </div>
                     </div>
                   </div>
@@ -188,7 +197,15 @@ const CommunityHome: React.FC = () => {
             </Link>
           </div>
 
-          {groups.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : !groups?.length ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No groups found</p>
             </div>
@@ -203,17 +220,22 @@ const CommunityHome: React.FC = () => {
                   {group.image && (
                     <img
                       src={group.image}
-                      alt={group.name}
+                      alt={group.name || 'Group image'}
                       className="w-full h-48 object-cover rounded-t-lg"
                     />
                   )}
                   <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-2">{group.name}</h2>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{group.description}</p>
+                    <h2 className="text-xl font-semibold mb-2">{group.name || 'Unnamed Group'}</h2>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{group.description || 'No description available'}</p>
                     <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{group.memberCount} members</span>
+                      <span>{group.memberCount || 0} members</span>
                       <span className="text-blue-500">Join Group</span>
                     </div>
+                    {group.createdAt && (
+                      <div className="mt-2 text-xs text-gray-400">
+                        Created {new Date(group.createdAt).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}

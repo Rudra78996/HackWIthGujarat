@@ -1,6 +1,8 @@
 import express from 'express';
 import Gig from '../models/gigModel.js';
 import { protect } from '../middleware/authMiddleware.js';
+import PaymentService from '../services/paymentService.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -271,6 +273,93 @@ router.put('/:gigId/status', protect, async (req, res) => {
   } catch (error) {
     console.error('Error updating gig status:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Create payment for accepted application
+router.post('/:gigId/applications/:applicationId/payment', protect, async (req, res) => {
+  try {
+    const gig = await Gig.findById(req.params.gigId);
+    if (!gig) {
+      return res.status(404).json({ message: 'Gig not found' });
+    }
+
+    const application = gig.applications.id(req.params.applicationId);
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    if (application.status !== 'Accepted') {
+      return res.status(400).json({ message: 'Application must be accepted before payment' });
+    }
+
+    if (application.paymentDetails?.paymentStatus === 'Completed') {
+      return res.status(400).json({ message: 'Payment already completed' });
+    }
+
+    const orderId = `ORDER_${uuidv4()}`;
+    const amount = application.proposedBudget;
+
+    const customerDetails = {
+      id: req.user._id.toString(),
+      name: req.user.name,
+      email: req.user.email,
+      phone: req.user.phone || ''
+    };
+
+    const paymentOrder = await PaymentService.createOrder(orderId, amount, customerDetails);
+
+    // Update application with payment details
+    application.paymentDetails = {
+      paymentId: orderId,
+      paymentStatus: 'Pending',
+      amount: amount,
+      currency: 'INR'
+    };
+    await gig.save();
+
+    res.json({
+      orderId: orderId,
+      paymentUrl: paymentOrder.payment_link
+    });
+  } catch (error) {
+    console.error('Error creating payment:', error);
+    res.status(500).json({ message: 'Failed to create payment' });
+  }
+});
+
+// Verify payment callback
+router.post('/payment/callback', async (req, res) => {
+  try {
+    const { order_id, payment_id } = req.body;
+
+    const paymentDetails = await PaymentService.verifyPayment(order_id, payment_id);
+
+    if (paymentDetails.payment_status === 'SUCCESS') {
+      // Find the gig and application with this order ID
+      const gig = await Gig.findOne({
+        'applications.paymentDetails.paymentId': order_id
+      });
+
+      if (gig) {
+        const application = gig.applications.find(
+          app => app.paymentDetails.paymentId === order_id
+        );
+
+        if (application) {
+          application.paymentDetails.paymentStatus = 'Completed';
+          application.paymentDetails.paymentDate = new Date();
+          await gig.save();
+        }
+      }
+
+      res.redirect(`${process.env.FRONTEND_URL}/payment/success?order_id=${order_id}`);
+    } else {
+      res.redirect(`${process.env.FRONTEND_URL}/payment/failed?order_id=${order_id}`);
+    }
+  } catch (error) {
+    console.error('Error in payment callback:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/payment/failed`);
   }
 });
 
