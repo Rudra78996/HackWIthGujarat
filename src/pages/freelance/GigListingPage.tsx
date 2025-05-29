@@ -248,122 +248,155 @@ const GigListingPage = () => {
       exit={{ opacity: 0 }}
       className="space-y-6"
     >
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold">
-          {filters.category ? `${filters.category} Gigs` : 'Available Gigs'}
-        </h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search gigs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-          </div>
-          <button 
-            className="btn-ghost"
-            onClick={() => setShowFilterModal(true)}
-          >
-            <Filter size={20} className="mr-2" />
-            Filters
-            {(filters.location.length > 0 || filters.experience.length > 0) && (
-              <span className="ml-2 px-2 py-0.5 bg-primary-100 text-primary-600 rounded-full text-xs">
-                {filters.location.length + filters.experience.length}
-              </span>
-            )}
-          </button>
+      {/* Search and Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search gigs..."
+            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
         </div>
+        <button
+          onClick={() => setShowFilterModal(true)}
+          className="btn-ghost flex items-center justify-center gap-2"
+        >
+          <Filter className="h-5 w-5" />
+          Filters
+        </button>
       </div>
 
       {/* Active Filters */}
-      {(filters.location.length > 0 || filters.experience.length > 0) && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-gray-600">Active filters:</span>
+      {(filters.location.length > 0 || filters.experience.length > 0 || filters.category) && (
+        <div className="flex flex-wrap gap-2">
           {filters.location.map(location => (
-            <span key={location} className="badge-primary">
+            <span
+              key={location}
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400"
+            >
               {location}
               <button
                 onClick={() => handleLocationToggle(location)}
-                className="ml-1 hover:text-primary-700"
+                className="ml-2 hover:text-primary-900 dark:hover:text-primary-300"
               >
-                <X size={14} />
+                <X className="h-4 w-4" />
               </button>
             </span>
           ))}
           {filters.experience.map(experience => (
-            <span key={experience} className="badge-primary">
+            <span
+              key={experience}
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400"
+            >
               {experience}
               <button
                 onClick={() => handleExperienceToggle(experience)}
-                className="ml-1 hover:text-primary-700"
+                className="ml-2 hover:text-primary-900 dark:hover:text-primary-300"
               >
-                <X size={14} />
+                <X className="h-4 w-4" />
               </button>
             </span>
           ))}
+          {filters.category && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400">
+              {filters.category}
+              <button
+                onClick={() => handleFilterChange('category', undefined)}
+                className="ml-2 hover:text-primary-900 dark:hover:text-primary-300"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </span>
+          )}
           <button
             onClick={clearFilters}
-            className="text-sm text-primary-600 hover:text-primary-700"
+            className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
           >
             Clear all
           </button>
         </div>
       )}
 
+      {/* Gig List */}
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 dark:border-primary-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading gigs...</p>
         </div>
       ) : error ? (
-        <div className="text-center text-red-600 py-8">{error}</div>
+        <div className="text-center py-12">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
       ) : filteredGigs.length === 0 ? (
-        <div className="text-center text-gray-600 py-8">No gigs found</div>
+        <div className="text-center py-12">
+          <Briefcase className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No gigs found</h3>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Try adjusting your search or filter criteria
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {filteredGigs.map((gig) => (
-            <div 
-              key={gig._id} 
-              className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/freelance/gigs/${gig._id}`)}
+        <div className="grid gap-6">
+          {filteredGigs.map(gig => (
+            <div
+              key={gig._id}
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-primary-50 rounded-lg">
-                    <Briefcase className="h-6 w-6 text-primary-600" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    {gig.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                    {gig.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {gig.skills.map(skill => (
+                      <span
+                        key={skill}
+                        className="px-3 py-1 rounded-full text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                      >
+                        {skill}
+                      </span>
+                    ))}
                   </div>
-                  <div>
-                    <h3 className="text-lg font-medium mb-1">{gig.title}</h3>
-                    <p className="text-gray-600 mb-2 line-clamp-2">{gig.description}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {gig.skills.map((skill) => (
-                        <span key={skill} className="badge-primary">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-2 text-sm text-gray-500">
-                      <span className="mr-4">Location: {gig.location}</span>
-                      <span>Experience: {gig.experience}</span>
-                    </div>
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    <span>Budget: ${gig.budget}</span>
+                    <span>Duration: {gig.duration}</span>
+                    <span>Location: {gig.location}</span>
+                    <span>Experience: {gig.experience}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-medium text-gray-900">${gig.budget}/hr</p>
-                  <p className="text-sm text-gray-500">{formatDate(gig.createdAt)}</p>
-                  <p className="text-sm text-gray-500">Duration: {gig.duration}</p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent navigation when clicking the apply button
-                      handleApply(gig);
-                    }}
-                    className="mt-2 btn-primary text-sm"
-                  >
-                    Apply Now
-                  </button>
+                <button
+                  onClick={() => handleApply(gig)}
+                  className="btn-primary whitespace-nowrap"
+                >
+                  Apply Now
+                </button>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 font-medium">
+                    {gig.postedBy.profilePicture ? (
+                      <img
+                        src={gig.postedBy.profilePicture}
+                        alt={gig.postedBy.name}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      gig.postedBy.name.charAt(0)
+                    )}
+                  </div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                    Posted by {gig.postedBy.name}
+                  </span>
                 </div>
+                <span className="text-sm text-gray-500 dark:text-gray-500">
+                  {formatDate(gig.createdAt)}
+                </span>
               </div>
             </div>
           ))}
@@ -373,62 +406,51 @@ const GigListingPage = () => {
       {/* Filter Modal */}
       {showFilterModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Filter Gigs</h2>
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Filters</h2>
+            
+            {/* Location Filter */}
+            <div className="mb-6">
+              <h3 className="font-medium mb-2 dark:text-gray-200">Location</h3>
+              <div className="space-y-2">
+                {locations.map(location => (
+                  <label key={location} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.location.includes(location)}
+                      onChange={() => handleLocationToggle(location)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">{location}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-6">
-              {/* Location Filter */}
-              <div>
-                <h3 className="font-medium mb-2">Location</h3>
-                <div className="flex flex-wrap gap-2">
-                  {locations.map(location => (
-                    <button
-                      key={location}
-                      onClick={() => handleLocationToggle(location)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        filters.location.includes(location)
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {location}
-                    </button>
-                  ))}
-                </div>
+            {/* Experience Filter */}
+            <div className="mb-6">
+              <h3 className="font-medium mb-2 dark:text-gray-200">Experience Level</h3>
+              <div className="space-y-2">
+                {experienceLevels.map(level => (
+                  <label key={level} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={filters.experience.includes(level)}
+                      onChange={() => handleExperienceToggle(level)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">{level}</span>
+                  </label>
+                ))}
               </div>
+            </div>
 
-              {/* Experience Filter */}
-              <div>
-                <h3 className="font-medium mb-2">Experience Level</h3>
-                <div className="flex flex-wrap gap-2">
-                  {experienceLevels.map(experience => (
-                    <button
-                      key={experience}
-                      onClick={() => handleExperienceToggle(experience)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        filters.experience.includes(experience)
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {experience}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Budget Range Filter */}
-              <div>
-                <h3 className="font-medium mb-2">Budget Range (USD/hr)</h3>
-                <div className="flex items-center space-x-4">
+            {/* Budget Range Filter */}
+            <div className="mb-6">
+              <h3 className="font-medium mb-2 dark:text-gray-200">Budget Range</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Min</label>
                   <input
                     type="number"
                     value={filters.budgetRange.min}
@@ -436,10 +458,11 @@ const GigListingPage = () => {
                       ...filters.budgetRange,
                       min: Number(e.target.value)
                     })}
-                    className="w-24 px-3 py-2 border rounded-md"
-                    placeholder="Min"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
-                  <span>to</span>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Max</label>
                   <input
                     type="number"
                     value={filters.budgetRange.max}
@@ -447,23 +470,25 @@ const GigListingPage = () => {
                       ...filters.budgetRange,
                       max: Number(e.target.value)
                     })}
-                    className="w-24 px-3 py-2 border rounded-md"
-                    placeholder="Max"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 mt-6">
-              <button
-                onClick={clearFilters}
-                className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Clear All
-              </button>
+            <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowFilterModal(false)}
-                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+                className="btn-ghost"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  applyFilters();
+                  setShowFilterModal(false);
+                }}
+                className="btn-primary"
               >
                 Apply Filters
               </button>
@@ -475,19 +500,12 @@ const GigListingPage = () => {
       {/* Apply Modal */}
       {showApplyModal && selectedGig && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Apply for {selectedGig.title}</h2>
-              <button
-                onClick={() => setShowApplyModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={24} />
-              </button>
-            </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Apply for {selectedGig.title}</h2>
+            
             <form onSubmit={handleSubmitApplication} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Cover Letter
                 </label>
                 <textarea
@@ -496,15 +514,16 @@ const GigListingPage = () => {
                     ...prev,
                     coverLetter: e.target.value
                   }))}
-                  required
                   rows={4}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="Explain why you're the best fit for this gig..."
+                  required
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Proposed Budget (USD/hr)
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Proposed Budget
                 </label>
                 <input
                   type="number"
@@ -513,23 +532,24 @@ const GigListingPage = () => {
                     ...prev,
                     proposedBudget: Number(e.target.value)
                   }))}
-                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   min={0}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  required
                 />
               </div>
-              <div className="flex justify-end space-x-4">
+
+              <div className="flex justify-end gap-4">
                 <button
                   type="button"
                   onClick={() => setShowApplyModal(false)}
-                  className="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
+                  className="btn-ghost"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  className="btn-primary"
                   disabled={submitting}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
                 >
                   {submitting ? 'Submitting...' : 'Submit Application'}
                 </button>

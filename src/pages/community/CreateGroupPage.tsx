@@ -111,162 +111,170 @@ const CreateGroupPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Create New Group</h1>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Create New Group</h1>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-500 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Group Image */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Group Image
-          </label>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Group preview"
-                  className="h-32 w-32 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="h-32 w-32 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <ImageIcon className="h-8 w-8 text-gray-400" />
-                </div>
-              )}
-              <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg opacity-0 hover:opacity-100 cursor-pointer transition-opacity">
-                <span className="text-white text-sm">Change Image</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">
-                Upload a group image (optional)
-              </p>
-              <p className="text-xs text-gray-400">
-                Recommended size: 400x400 pixels
-              </p>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Group Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Group Image
+            </label>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt="Group preview"
+                    className="h-32 w-32 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="h-32 w-32 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <ImageIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                  </div>
+                )}
+                <label className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg opacity-0 hover:opacity-100 cursor-pointer transition-opacity">
+                  <span className="text-white text-sm">Change Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Upload a group image (optional)
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Recommended size: 400x400 pixels
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Group Name */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Group Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              validationErrors.name ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Enter group name"
-          />
-          {validationErrors.name && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-          )}
-        </div>
+          {/* Group Name */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Group Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                validationErrors.name 
+                  ? 'border-red-500 dark:border-red-500' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="Enter group name"
+            />
+            {validationErrors.name && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.name}</p>
+            )}
+          </div>
 
-        {/* Category */}
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            Category
-          </label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              validationErrors.category ? 'border-red-500' : 'border-gray-300'
-            }`}
-          >
-            <option value="Web Development">Web Development</option>
-            <option value="Mobile Development">Mobile Development</option>
-            <option value="UI/UX Design">UI/UX Design</option>
-            <option value="Data Science">Data Science</option>
-            <option value="DevOps">DevOps</option>
-            <option value="Blockchain">Blockchain</option>
-            <option value="Career">Career</option>
-            <option value="Open Source">Open Source</option>
-            <option value="Other">Other</option>
-          </select>
-          {validationErrors.category && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.category}</p>
-          )}
-        </div>
+          {/* Category */}
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Category
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                validationErrors.category 
+                  ? 'border-red-500 dark:border-red-500' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+            >
+              <option value="Web Development">Web Development</option>
+              <option value="Mobile Development">Mobile Development</option>
+              <option value="UI/UX Design">UI/UX Design</option>
+              <option value="Data Science">Data Science</option>
+              <option value="DevOps">DevOps</option>
+              <option value="Blockchain">Blockchain</option>
+              <option value="Career">Career</option>
+              <option value="Open Source">Open Source</option>
+              <option value="Other">Other</option>
+            </select>
+            {validationErrors.category && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.category}</p>
+            )}
+          </div>
 
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            rows={4}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              validationErrors.description ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="Describe your group's purpose and topics"
-          />
-          {validationErrors.description && (
-            <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
-          )}
-        </div>
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              rows={4}
+              className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                validationErrors.description 
+                  ? 'border-red-500 dark:border-red-500' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
+              placeholder="Describe your group's purpose and topics"
+            />
+            {validationErrors.description && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{validationErrors.description}</p>
+            )}
+          </div>
 
-        {/* Privacy Setting */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="isPrivate"
-            name="isPrivate"
-            checked={formData.isPrivate}
-            onChange={handleChange}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor="isPrivate" className="ml-2 block text-sm text-gray-700">
-            Make this group private
-          </label>
-        </div>
+          {/* Privacy Setting */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isPrivate"
+              name="isPrivate"
+              checked={formData.isPrivate}
+              onChange={handleChange}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+            />
+            <label htmlFor="isPrivate" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+              Make this group private
+            </label>
+          </div>
 
-        {/* Submit Button */}
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
-          >
-            {loading ? 'Creating...' : 'Create Group'}
-          </button>
-        </div>
-      </form>
+          {/* Submit Button */}
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating...' : 'Create Group'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

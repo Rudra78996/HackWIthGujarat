@@ -31,6 +31,7 @@ const ManageEventPage = lazy(() => import('./pages/events/ManageEventPage'));
 // Community pages
 const CommunityHome = lazy(() => import('./pages/community/CommunityHome'));
 const GroupPage = lazy(() => import('./pages/community/GroupPage'));
+const GroupsPage = lazy(() => import('./pages/community/GroupsPage'));
 const DirectMessagePage = lazy(() => import('./pages/community/DirectMessagePage'));
 const CreateGroupPage = lazy(() => import('./pages/community/CreateGroupPage'));
 const CreatePost = lazy(() => import('./pages/community/CreatePost'));
@@ -85,6 +86,7 @@ function App() {
               {/* Community Routes */}
               <Route path="community">
                 <Route index element={<CommunityHome />} />
+                <Route path="groups" element={<GroupsPage />} />
                 <Route path="groups/:id" element={<GroupPage />} />
                 <Route path="messages/:id" element={<DirectMessagePage />} />
                 <Route path="create-group" element={<CreateGroupPage />} />

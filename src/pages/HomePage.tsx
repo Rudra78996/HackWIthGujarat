@@ -16,7 +16,7 @@ const HomePage = () => {
   };
 
   return (
-    <div className="space-y-20 pb-20">
+    <div className="space-y-20 pb-20 bg-white dark:bg-gray-900">
       {/* Hero Section */}
       <section className="relative -mt-6 px-4 pt-20 pb-20 sm:px-6 lg:px-8">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 to-accent-700 h-3/4 z-[-1]"></div>
@@ -140,38 +140,38 @@ const HomePage = () => {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
             Our platform brings together everything you need for tech collaboration in one place
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-2xl font-bold mb-6">
+            <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold mb-6">
               1
             </div>
             <h3 className="text-xl font-semibold mb-3">Create Your Profile</h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Sign up and build your professional profile showcasing your skills, experience, and portfolio.
             </p>
           </div>
 
           <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-2xl font-bold mb-6">
+            <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold mb-6">
               2
             </div>
             <h3 className="text-xl font-semibold mb-3">Connect & Collaborate</h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Find gigs, join events, and engage with the community through groups and direct messages.
             </p>
           </div>
 
           <div className="flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-2xl font-bold mb-6">
+            <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold mb-6">
               3
             </div>
             <h3 className="text-xl font-semibold mb-3">Grow Your Network</h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Build relationships, gain visibility, and unlock new opportunities in the tech industry.
             </p>
           </div>
@@ -179,12 +179,12 @@ const HomePage = () => {
       </section>
 
       {/* Featured Section */}
-      <section className="bg-gray-50 py-16">
+      <section className="bg-gray-50 dark:bg-gray-800/50 py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-6">Featured Opportunities</h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
                 Discover top gigs, upcoming events, and active communities in your area of expertise.
               </p>
 
@@ -197,8 +197,8 @@ const HomePage = () => {
                   'Learn from peers in specialized communities',
                 ].map((item, index) => (
                   <li key={index} className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-primary-600 mr-3 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{item}</span>
+                    <CheckCircle className="h-6 w-6 text-primary-600 dark:text-primary-400 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -218,17 +218,17 @@ const HomePage = () => {
                   className="w-full h-auto"
                 />
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-lg shadow-lg p-6 max-w-sm">
+              <div className="absolute -bottom-6 -left-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-sm">
                 <div className="flex items-center mb-3">
-                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                    <Calendar className="h-5 w-5 text-primary-600" />
+                  <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center mr-3">
+                    <Calendar className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Upcoming Event</h4>
-                    <p className="text-sm text-gray-500">React Developer Summit</p>
+                    <h4 className="font-medium dark:text-gray-200">Upcoming Event</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">React Developer Summit</p>
                   </div>
                 </div>
-                <Link to="/events/1" className="text-primary-600 text-sm font-medium flex items-center">
+                <Link to="/events/1" className="text-primary-600 dark:text-primary-400 text-sm font-medium flex items-center">
                   View Details
                   <ExternalLink className="h-3 w-3 ml-1" />
                 </Link>
@@ -242,7 +242,7 @@ const HomePage = () => {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
             Join thousands of tech professionals who've found success on our platform
           </p>
         </div>

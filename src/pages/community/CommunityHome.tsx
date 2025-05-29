@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { MessageSquare, ThumbsUp, Share2, Plus } from 'lucide-react';
 
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   withCredentials: true,
-  timeout: 5000, // 5 second timeout
+  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -51,44 +52,21 @@ interface Post {
   image?: string;
 }
 
-interface Group {
-  _id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  image?: string;
-  createdAt?: string;
-  members?: Array<{
-    _id: string;
-    name: string;
-    role: string;
-  }>;
-}
-
 const CommunityHome: React.FC = () => {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'posts' | 'groups'>('posts');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        if (activeTab === 'posts') {
-          const response = await api.get('/community/posts');
-          if (!Array.isArray(response.data)) {
-            throw new Error('Expected an array of posts from the API');
-          }
-          setPosts(response.data);
-        } else {
-          const response = await api.get('/community/groups');
-          if (!Array.isArray(response.data)) {
-            throw new Error('Expected an array of groups from the API');
-          }
-          setGroups(response.data);
+        const response = await api.get('/community/posts');
+        if (!Array.isArray(response.data)) {
+          throw new Error('Expected an array of posts from the API');
         }
+        setPosts(response.data);
         setError(null);
       } catch (err: any) {
         console.error('Error fetching data:', err);
@@ -99,12 +77,16 @@ const CommunityHome: React.FC = () => {
     };
 
     fetchData();
-  }, [activeTab]);
+  }, []);
+
+  const handlePostClick = (postId: string) => {
+    navigate(`/community/posts/${postId}`);
+  };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -118,139 +100,98 @@ const CommunityHome: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Community</h1>
-        <div className="space-x-4">
-          <button
-            onClick={() => setActiveTab('posts')}
-            className={`px-4 py-2 rounded-md ${
-              activeTab === 'posts'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Posts
-          </button>
-          <button
-            onClick={() => setActiveTab('groups')}
-            className={`px-4 py-2 rounded-md ${
-              activeTab === 'groups'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Groups
-          </button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Community Posts
+          </h1>
+          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+            Share your thoughts and connect with other freelancers
+          </p>
         </div>
+        <Link
+          to="/community/create-post"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Create Post
+        </Link>
       </div>
 
-      {activeTab === 'posts' ? (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <Link
-              to="/community/create-post"
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Create Post
-            </Link>
-          </div>
-
-          {!posts?.length ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No posts found</p>
-            </div>
-          ) : (
-            <div className="grid gap-6">
-              {posts.map((post) => (
-                <Link
-                  key={post._id}
-                  to={`/community/posts/${post._id}`}
-                  className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  {post.image && (
+      {/* Posts Section */}
+      <div className="space-y-6">
+        {posts.map(post => (
+          <div
+            key={post._id}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handlePostClick(post._id)}
+          >
+            <div className="flex items-start space-x-4">
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                      {post.author.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  {post.title}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
+                  {post.content}
+                </p>
+                {post.image && (
+                  <div className="mb-4">
                     <img
                       src={post.image}
-                      alt={post.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
+                      alt="Post attachment"
+                      className="rounded-lg max-w-full h-48 object-cover"
                     />
-                  )}
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-2">{post.title}</h2>
-                    <p className="text-gray-600 mb-4 line-clamp-3">{post.content}</p>
-                    <div className="flex justify-between items-center text-sm text-gray-500">
-                      <div className="flex items-center space-x-4">
-                        <span>Posted by {post.author?.name || 'Unknown'}</span>
-                        <span>{new Date(post.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <span>{post.likes} likes</span>
-                        <span>{post.comments?.length || 0} comments</span>
-                      </div>
-                    </div>
                   </div>
-                </Link>
-              ))}
+                )}
+                <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                  <button 
+                    className="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle like
+                    }}
+                  >
+                    <ThumbsUp className="h-4 w-4 mr-1" />
+                    <span>{post.likes}</span>
+                  </button>
+                  <button 
+                    className="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle comment
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    <span>{post.comments.length}</span>
+                  </button>
+                  <button 
+                    className="flex items-center hover:text-primary-600 dark:hover:text-primary-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle share
+                    }}
+                  >
+                    <Share2 className="h-4 w-4 mr-1" />
+                    <span>Share</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <Link
-              to="/community/create-group"
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Create Group
-            </Link>
           </div>
-
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <p className="text-red-500">{error}</p>
-            </div>
-          ) : !groups?.length ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No groups found</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {groups.map((group) => (
-                <Link
-                  key={group._id}
-                  to={`/community/groups/${group._id}`}
-                  className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
-                >
-                  {group.image && (
-                    <img
-                      src={group.image}
-                      alt={group.name || 'Group image'}
-                      className="w-full h-48 object-cover rounded-t-lg"
-                    />
-                  )}
-                  <div className="p-6">
-                    <h2 className="text-xl font-semibold mb-2">{group.name || 'Unnamed Group'}</h2>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{group.description || 'No description available'}</p>
-                    <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{group.memberCount || 0} members</span>
-                      <span className="text-blue-500">Join Group</span>
-                    </div>
-                    {group.createdAt && (
-                      <div className="mt-2 text-xs text-gray-400">
-                        Created {new Date(group.createdAt).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 };

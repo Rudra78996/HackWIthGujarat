@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Send, Image as ImageIcon } from 'lucide-react';
+import { Send, Image as ImageIcon, Info, X } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 interface Message {
   _id: string;
@@ -31,6 +32,8 @@ const DirectMessagePage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -119,104 +122,232 @@ const DirectMessagePage: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
-      {/* Chat Header */}
-      <div className="border-b border-gray-200 p-4 bg-white">
-        <div className="flex items-center">
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="h-10 w-10 rounded-full mr-3"
+    <div className="h-[calc(100vh-64px)] flex">
+      {/* Conversations Sidebar */}
+      <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Messages</h2>
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
-          ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-200 mr-3 flex items-center justify-center">
-              {user.name[0]}
-            </div>
-          )}
-          <div>
-            <h2 className="font-semibold">{user.name}</h2>
-            <p className="text-sm text-gray-500">
-              {user.status === 'online' ? (
-                <span className="flex items-center">
-                  <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-                  Online
-                </span>
-              ) : (
-                <span>Last seen {new Date(user.lastSeen!).toLocaleString()}</span>
-              )}
-            </p>
           </div>
+        </div>
+        <div className="overflow-y-auto h-[calc(100vh-180px)]">
+          {conversations.map((conversation) => (
+            <button
+              key={conversation.id}
+              onClick={() => setSelectedConversation(conversation)}
+              className={`w-full p-4 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                selectedConversation?.id === conversation.id
+                  ? 'bg-gray-50 dark:bg-gray-700'
+                  : ''
+              }`}
+            >
+              <div className="relative">
+                <img
+                  src={conversation.participant.avatar}
+                  alt={conversation.participant.name}
+                  className="h-12 w-12 rounded-full"
+                />
+                {conversation.participant.isOnline && (
+                  <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {conversation.participant.name}
+                  </p>
+                  {conversation.lastMessage && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTime(conversation.lastMessage.createdAt)}
+                    </p>
+                  )}
+                </div>
+                {conversation.lastMessage && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {conversation.lastMessage.content}
+                  </p>
+                )}
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message._id}
-            className={`flex ${
-              message.sender._id === localStorage.getItem('userId')
-                ? 'justify-end'
-                : 'justify-start'
-            }`}
-          >
-            <div
-              className={`max-w-[70%] rounded-lg p-3 ${
-                message.sender._id === localStorage.getItem('userId')
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100'
-              }`}
-            >
-              {message.type === 'image' && message.imageUrl && (
-                <img
-                  src={message.imageUrl}
-                  alt="Shared"
-                  className="max-w-full rounded-lg mb-2"
-                />
-              )}
-              <p>{message.content}</p>
-              <div
-                className={`text-xs mt-1 ${
-                  message.sender._id === localStorage.getItem('userId')
-                    ? 'text-blue-100'
-                    : 'text-gray-500'
-                }`}
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-800">
+        {selectedConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <img
+                    src={selectedConversation.participant.avatar}
+                    alt={selectedConversation.participant.name}
+                    className="h-10 w-10 rounded-full"
+                  />
+                  {selectedConversation.participant.isOnline && (
+                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {selectedConversation.participant.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {selectedConversation.participant.isOnline ? 'Online' : 'Offline'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUserProfile(true)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
               >
-                {new Date(message.createdAt).toLocaleTimeString()}
+                <Info className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.sender.id === currentUser?.id
+                      ? 'justify-end'
+                      : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-lg p-3 ${
+                      message.sender.id === currentUser?.id
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                    }`}
+                  >
+                    {message.type === 'image' && message.imageUrl && (
+                      <img
+                        src={message.imageUrl}
+                        alt="Shared"
+                        className="max-w-full rounded-lg mb-2"
+                      />
+                    )}
+                    <p>{message.content}</p>
+                    <div
+                      className={`text-xs mt-1 ${
+                        message.sender.id === currentUser?.id
+                          ? 'text-primary-100'
+                          : 'text-gray-500 dark:text-gray-400'
+                      }`}
+                    >
+                      {formatTime(message.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <ImageIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                </label>
+                <button
+                  type="submit"
+                  className="p-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
+                >
+                  <Send className="h-5 w-5" />
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageSquare className="h-12 w-12 text-gray-400 mx-auto" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                No conversation selected
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Choose a conversation from the sidebar to start messaging
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* User Profile Modal */}
+      {showUserProfile && selectedConversation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                User Profile
+              </h3>
+              <button
+                onClick={() => setShowUserProfile(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <img
+                src={selectedConversation.participant.avatar}
+                alt={selectedConversation.participant.name}
+                className="h-16 w-16 rounded-full"
+              />
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {selectedConversation.participant.name}
+                </h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {selectedConversation.participant.title}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {selectedConversation.participant.email}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Location
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  {selectedConversation.participant.location}
+                </p>
               </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="border-t border-gray-200 p-4">
-        <div className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            <ImageIcon className="h-5 w-5 text-gray-500" />
-          </label>
-          <button
-            type="submit"
-            className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-          >
-            <Send className="h-5 w-5" />
-          </button>
         </div>
-      </form>
+      )}
     </div>
   );
 };

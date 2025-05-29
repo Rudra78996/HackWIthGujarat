@@ -363,4 +363,26 @@ router.post('/payment/callback', async (req, res) => {
   }
 });
 
+// Get applications for a specific gig
+router.get('/:id/applications', protect, async (req, res) => {
+  try {
+    const gig = await Gig.findById(req.params.id)
+      .populate('applications.user', 'name title profilePicture');
+
+    if (!gig) {
+      return res.status(404).json({ message: 'Gig not found' });
+    }
+
+    // Check if user is the gig owner
+    if (gig.postedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to view applications' });
+    }
+
+    res.json(gig.applications);
+  } catch (error) {
+    console.error('Error fetching applications:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router; 

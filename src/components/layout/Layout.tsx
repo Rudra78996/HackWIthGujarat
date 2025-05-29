@@ -16,7 +16,7 @@ const Layout = () => {
   const showSidebar = isAuthenticated && !isAuthPage;
   
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
       
       <div className="flex flex-1">

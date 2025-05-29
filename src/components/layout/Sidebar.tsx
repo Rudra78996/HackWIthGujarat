@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Briefcase, Calendar, Users, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Briefcase, Calendar, Users, Plus, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
 
 interface MenuItem {
   title: string;
@@ -18,6 +18,7 @@ interface MenuItem {
 const Sidebar = () => {
   const location = useLocation();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     const items: MenuItem[] = [
@@ -82,9 +83,14 @@ const Sidebar = () => {
         open: location.pathname.startsWith('/community'),
         submenu: [
           {
-            title: 'All Groups',
+            title: 'Posts',
             path: '/community',
             active: location.pathname === '/community',
+          },
+          {
+            title: 'All Groups',
+            path: '/community/groups',
+            active: location.pathname === '/community/groups',
           },
           {
             title: 'Direct Messages',
@@ -110,15 +116,31 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 fixed left-0 h-full z-10 hidden md:block pt-4 pb-6 overflow-y-auto">
-      <div className="px-6 py-4">
-        <Link
-          to="/create"
-          className="flex items-center justify-center w-full btn-primary space-x-2"
+    <aside className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 fixed left-0 h-full z-10 hidden md:block pt-4 pb-6 overflow-y-auto transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
+    }`}>
+      <div className="flex items-center justify-between px-4 mb-4">
+        {!isCollapsed && (
+          <Link
+            to="/create"
+            className="flex items-center justify-center w-full btn-primary space-x-2"
+          >
+            <Plus size={16} />
+            <span>Create New</span>
+          </Link>
+        )}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 ${
+            isCollapsed ? 'ml-2' : ''
+          }`}
         >
-          <Plus size={16} />
-          <span>Create New</span>
-        </Link>
+          {isCollapsed ? (
+            <ChevronRight size={20} />
+          ) : (
+            <ChevronLeft size={20} />
+          )}
+        </button>
       </div>
 
       <nav className="mt-2">
@@ -130,15 +152,15 @@ const Sidebar = () => {
                   onClick={() => toggleSubmenu(index)}
                   className={`flex items-center justify-between w-full px-3 py-2 rounded-md transition-colors ${
                     item.active
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <div className="flex items-center">
-                    <span className="mr-3">{item.icon}</span>
-                    <span className="font-medium">{item.title}</span>
+                    <span className={`${isCollapsed ? 'mr-0' : 'mr-3'}`}>{item.icon}</span>
+                    {!isCollapsed && <span className="font-medium">{item.title}</span>}
                   </div>
-                  {item.submenu && (
+                  {!isCollapsed && item.submenu && (
                     <span>
                       {item.open ? (
                         <ChevronDown size={16} />
@@ -150,7 +172,7 @@ const Sidebar = () => {
                 </button>
               </div>
 
-              {item.submenu && item.open && (
+              {!isCollapsed && item.submenu && item.open && (
                 <ul className="mt-1 ml-12 space-y-1">
                   {item.submenu.map((subItem) => (
                     <li key={subItem.title}>
@@ -158,8 +180,8 @@ const Sidebar = () => {
                         to={subItem.path}
                         className={`block px-3 py-2 text-sm rounded-md transition-colors ${
                           subItem.active
-                            ? 'bg-primary-50 text-primary-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            ? 'bg-primary-50 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         {subItem.title}
@@ -173,17 +195,19 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      <div className="px-6 mt-8">
-        <div className="p-4 bg-primary-50 rounded-lg">
-          <h4 className="font-medium text-primary-800 mb-2">Need Help?</h4>
-          <p className="text-sm text-gray-600 mb-3">
-            Have questions or need support with the platform?
-          </p>
-          <Link to="/support" className="btn-primary w-full text-center text-sm">
-            Contact Support
-          </Link>
+      {!isCollapsed && (
+        <div className="px-6 mt-8">
+          <div className="p-4 bg-primary-50 dark:bg-primary-900/50 rounded-lg">
+            <h4 className="font-medium text-primary-800 dark:text-primary-400 mb-2">Need Help?</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Have questions or need support with the platform?
+            </p>
+            <Link to="/support" className="btn-primary w-full text-center text-sm">
+              Contact Support
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 };

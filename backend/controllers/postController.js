@@ -1,4 +1,5 @@
 import Post from '../models/Post.js';
+import Group from '../models/Group.js';
 
 // Get all posts
 export const getPosts = async (req, res) => {
@@ -15,6 +16,29 @@ export const getPosts = async (req, res) => {
     console.error('Error in getPosts:', error);
     res.status(500).json({ 
       message: 'Error fetching posts', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+};
+
+// Get posts for a specific group
+export const getGroupPosts = async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    const posts = await Post.find({ group: req.params.id })
+      .populate('author', 'name')
+      .populate('comments.author', 'name')
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Error in getGroupPosts:', error);
+    res.status(500).json({ 
+      message: 'Error fetching group posts', 
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
@@ -38,17 +62,48 @@ export const getPost = async (req, res) => {
 // Create post
 export const createPost = async (req, res) => {
   try {
-    const { title, content, image } = req.body;
+    const { title, content, image, groupId } = req.body;
+    
+    // Validate required fields
+    if (!title || !content || !groupId) {
+      return res.status(400).json({ 
+        message: 'Title, content, and groupId are required',
+        received: { title, content, groupId }
+      });
+    }
+
+    // Check if group exists
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
     const post = new Post({
       title,
       content,
       image,
-      author: req.user._id
+      author: req.user._id,
+      group: groupId
     });
+
     await post.save();
-    res.status(201).json(post);
+
+    // Add post to group's posts array
+    group.posts.push(post._id);
+    await group.save();
+
+    // Populate author and group data
+    const populatedPost = await Post.findById(post._id)
+      .populate('author', 'name')
+      .populate('group', 'name');
+
+    res.status(201).json(populatedPost);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating post', error: error.message });
+    console.error('Error in createPost:', error);
+    res.status(500).json({ 
+      message: 'Error creating post', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 

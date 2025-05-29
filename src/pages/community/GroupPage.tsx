@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { Users, Send } from 'lucide-react';
+import api from '../../services/api';
 import socketService from '../../services/socket';
-import { toast } from 'react-hot-toast';
-import { Send, Image as ImageIcon, Users, Settings } from 'lucide-react';
 
 interface Message {
   _id: string;
@@ -14,8 +13,12 @@ interface Message {
     avatar?: string;
   };
   createdAt: string;
-  type: 'text' | 'image';
-  imageUrl?: string;
+  attachments?: Array<{
+    type: string;
+    url: string;
+    name: string;
+    size: number;
+  }>;
 }
 
 interface Group {
@@ -29,6 +32,7 @@ interface Group {
     role: 'admin' | 'member';
   }>;
   image?: string;
+  category: string;
   createdAt: string;
 }
 
@@ -37,130 +41,62 @@ const GroupPage: React.FC = () => {
   const navigate = useNavigate();
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let isComponentMounted = true;
-    let connectionCheckInterval: number;
-
     const fetchGroupData = async () => {
-      if (!isComponentMounted) return;
-      
-      setLoading(true);
       try {
-        console.log('Fetching group data for ID:', id);
-        socketService.emit('get_group', { groupId: id }, (response: any) => {
-          if (!isComponentMounted) return;
-          
-          console.log('Group data response:', response);
-          if (response.error) {
-            console.error('Error fetching group:', response.error);
-            setError('Failed to fetch group data');
-            setLoading(false);
-            return;
-          }
-          if (!response.data) {
-            console.error('No group data received');
-            setError('Group data not found');
-            setLoading(false);
-            return;
-          }
-          setGroup(response.data);
-          setIsAdmin(response.data.members.some((member: any) => 
-            member._id === localStorage.getItem('userId') && member.role === 'admin'
-          ));
-          setLoading(false);
-        });
-      } catch (err) {
-        if (!isComponentMounted) return;
-        console.error('Error in fetchGroupData:', err);
-        setError('Failed to fetch group data');
+        setLoading(true);
+        const groupResponse = await api.get(`/community/groups/${id}`);
+        setGroup(groupResponse.data);
+        setIsAdmin(groupResponse.data.members.some(
+          (member: any) => member._id === localStorage.getItem('userId') && member.role === 'admin'
+        ));
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching group data:', err);
+        setError(err.response?.data?.message || 'Failed to fetch group data');
+      } finally {
         setLoading(false);
       }
     };
 
-    const fetchMessages = async () => {
-      if (!isComponentMounted) return;
-      
-      try {
-        console.log('Fetching messages for group:', id);
-        socketService.emit('get_group_messages', { groupId: id }, (response: any) => {
-          if (!isComponentMounted) return;
-          
-          console.log('Messages response:', response);
-          if (response.error) {
-            console.error('Error fetching messages:', response.error);
-            setError('Failed to fetch messages');
-            return;
-          }
-          if (response.messages) {
-            setMessages(response.messages);
-          }
-        });
-      } catch (err) {
-        if (!isComponentMounted) return;
-        console.error('Error in fetchMessages:', err);
-        setError('Failed to fetch messages');
+    fetchGroupData();
+  }, [id]);
+
+  useEffect(() => {
+    // Connect to socket and join group
+    socketService.connect(localStorage.getItem('token') || '');
+    socketService.joinGroup(id!);
+
+    // Fetch initial messages
+    socketService.emit('get_group_messages', { groupId: id }, (response: any) => {
+      if (response.messages) {
+        setMessages(response.messages);
       }
-    };
-
-    const setupSocket = () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        toast.error('Please log in to use chat features');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Connecting to socket...');
-      socketService.connect(token);
-      
-      connectionCheckInterval = setInterval(() => {
-        if (!isComponentMounted) {
-          clearInterval(connectionCheckInterval);
-          return;
-        }
-
-        if (socketService.isConnected()) {
-          console.log('Socket connected, joining group...');
-          clearInterval(connectionCheckInterval);
-          socketService.joinGroup(id!);
-          fetchGroupData();
-          fetchMessages();
-        }
-      }, 1000);
-    };
-
-    setupSocket();
+    });
 
     // Listen for new messages
     socketService.onGroupMessage((message: Message) => {
-      if (!isComponentMounted) return;
-      console.log('New message received:', message);
       setMessages(prev => [...prev, message]);
-    });
-
-    // Listen for errors
-    socketService.onGroupError((error: { message: string }) => {
-      if (!isComponentMounted) return;
-      console.error('Group error:', error);
-      toast.error(error.message);
+      scrollToBottom();
     });
 
     return () => {
-      isComponentMounted = false;
-      clearInterval(connectionCheckInterval);
       socketService.leaveGroup(id!);
       socketService.off('group_message');
-      socketService.off('group_error');
     };
   }, [id]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
@@ -168,39 +104,15 @@ const GroupPage: React.FC = () => {
       socketService.sendGroupMessage(id!, newMessage.trim());
       setNewMessage('');
     } catch (err) {
-      toast.error('Failed to send message');
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const response = await axios.post(`/api/community/groups/${id}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      if (response.data.imageUrl) {
-        socketService.sendGroupMessage(id!, '', 'image', response.data.imageUrl);
-      }
-    } catch (err) {
-      toast.error('Failed to upload image');
+      console.error('Error sending message:', err);
+      setError('Failed to send message');
     }
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading group data...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -214,127 +126,133 @@ const GroupPage: React.FC = () => {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
-      {/* Group Info Sidebar */}
-      <div className="w-80 border-r border-gray-200 bg-white p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">{group.name}</h2>
-          {isAdmin && (
-            <button
-              onClick={() => navigate(`/community/groups/${id}/settings`)}
-              className="p-2 hover:bg-gray-100 rounded-full"
-            >
-              <Settings className="h-5 w-5 text-gray-500" />
-            </button>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <p className="text-gray-600">{group.description}</p>
-        </div>
-
-        <div>
-          <div className="flex items-center mb-4">
-            <Users className="h-5 w-5 text-gray-500 mr-2" />
-            <h3 className="font-medium">Members ({group.members.length})</h3>
-          </div>
-          <div className="space-y-2">
-            {group.members.map((member) => (
-              <div key={member._id} className="flex items-center">
-                {member.avatar ? (
-                  <img
-                    src={member.avatar}
-                    alt={member.name || 'User'}
-                    className="h-8 w-8 rounded-full mr-2"
-                  />
-                ) : (
-                  <div className="h-8 w-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center">
-                    {(member.name || 'U')[0]}
-                  </div>
-                )}
-                <span className="text-sm">
-                  {member.name || 'Unknown User'}
-                  {member.role === 'admin' && (
-                    <span className="ml-2 text-xs text-blue-500">(Admin)</span>
-                  )}
-                </span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Group Header */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{group.name}</h1>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">{group.description}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col h-full">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message._id}
-              className={`flex ${
-                message.sender._id === localStorage.getItem('userId')
-                  ? 'justify-end'
-                  : 'justify-start'
-              }`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg p-3 ${
-                  message.sender._id === localStorage.getItem('userId')
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100'
-                }`}
-              >
-                {message.type === 'image' && message.imageUrl && (
-                  <img
-                    src={message.imageUrl}
-                    alt="Shared"
-                    className="max-w-full rounded-lg mb-2"
-                  />
-                )}
-                <p>{message.content}</p>
-                <div
-                  className={`text-xs mt-1 ${
-                    message.sender._id === localStorage.getItem('userId')
-                      ? 'text-blue-100'
-                      : 'text-gray-500'
-                  }`}
+              {isAdmin ? (
+                <button
+                  onClick={() => navigate(`/community/groups/${id}/settings`)}
+                  className="btn-outline-danger"
                 >
-                  {message.sender.name} •{' '}
-                  {new Date(message.createdAt).toLocaleTimeString()}
-                </div>
-              </div>
+                  Leave Group
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate(`/community/groups/${id}/join`)}
+                  className="btn-primary"
+                >
+                  Join Group
+                </button>
+              )}
             </div>
-          ))}
+          </div>
+
+          {/* Messages */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+            {/* Messages List */}
+            <div className="h-[600px] overflow-y-auto p-4 space-y-4">
+              {messages.map(message => (
+                <div
+                  key={message._id}
+                  className={`flex ${message.sender._id === localStorage.getItem('userId') ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[70%] rounded-lg p-3 ${
+                      message.sender._id === localStorage.getItem('userId')
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-sm font-medium">{message.sender.name}</span>
+                      <span className="text-xs opacity-75">
+                        {new Date(message.createdAt).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <p>{message.content}</p>
+                    {message.attachments?.map((attachment, index) => (
+                      <div key={index} className="mt-2">
+                        {attachment.type === 'image' && (
+                          <img
+                            src={attachment.url}
+                            alt={attachment.name}
+                            className="rounded-lg max-w-full h-48 object-cover"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Message Input */}
+            <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+              <form onSubmit={handleSendMessage} className="flex space-x-4">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                >
+                  <Send className="h-5 w-5" />
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
 
-        {/* Message Input - Fixed at bottom */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200">
-          <form onSubmit={handleSendMessage} className="p-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <ImageIcon className="h-5 w-5 text-gray-500" />
-              </label>
-              <button
-                type="submit"
-                className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600"
-              >
-                <Send className="h-5 w-5" />
-              </button>
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Group Info */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Group Info</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</h3>
+                <p className="mt-1 text-gray-900 dark:text-gray-100">{group.category}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Created</h3>
+                <p className="mt-1 text-gray-900 dark:text-gray-100">
+                  {new Date(group.createdAt).toLocaleDateString()}
+                </p>
+              </div>
             </div>
-          </form>
+          </div>
+
+          {/* Members */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Members</h2>
+            <div className="space-y-4">
+              {group.members.map(member => (
+                <div key={member._id} className="flex items-center">
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {member.name}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {member.role}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

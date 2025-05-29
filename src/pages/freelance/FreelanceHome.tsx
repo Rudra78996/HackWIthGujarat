@@ -56,27 +56,27 @@ const FreelanceHome = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
           {
-            icon: <Briefcase className="h-6 w-6 text-primary-600" />,
+            icon: <Briefcase className="h-6 w-6 text-primary-600 dark:text-primary-400" />,
             label: 'Active Gigs',
             value: '250+',
           },
           {
-            icon: <Users className="h-6 w-6 text-primary-600" />,
+            icon: <Users className="h-6 w-6 text-primary-600 dark:text-primary-400" />,
             label: 'Freelancers',
             value: '1,000+',
           },
           {
-            icon: <TrendingUp className="h-6 w-6 text-primary-600" />,
+            icon: <TrendingUp className="h-6 w-6 text-primary-600 dark:text-primary-400" />,
             label: 'Success Rate',
             value: '95%',
           },
         ].map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm p-6">
+          <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-primary-50 rounded-lg">{stat.icon}</div>
+              <div className="p-3 bg-primary-50 dark:bg-primary-900/50 rounded-lg">{stat.icon}</div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-gray-600">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
+                <p className="text-gray-600 dark:text-gray-400">{stat.label}</p>
               </div>
             </div>
           </div>
@@ -98,10 +98,10 @@ const FreelanceHome = () => {
             <button
               key={index}
               onClick={() => handleCategoryClick(category)}
-              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow text-left"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow text-left"
             >
-              <h3 className="font-medium text-lg mb-2">{category}</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-medium text-lg mb-2 dark:text-gray-100">{category}</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Find opportunities in {category.toLowerCase()}
               </p>
             </button>
@@ -110,9 +110,9 @@ const FreelanceHome = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-primary-50 rounded-lg p-8 text-center">
+      <section className="bg-primary-50 dark:bg-primary-900/50 rounded-lg p-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Ready to Start Freelancing?</h2>
-        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
           Create your profile, showcase your skills, and start applying to gigs that match your expertise.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

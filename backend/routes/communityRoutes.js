@@ -6,7 +6,8 @@ import {
   updatePost, 
   deletePost,
   toggleLike,
-  addComment
+  addComment,
+  getGroupPosts
 } from '../controllers/postController.js';
 import { 
   getGroups, 
@@ -38,5 +39,6 @@ router.put('/groups/:id', protect, updateGroup);
 router.delete('/groups/:id', protect, deleteGroup);
 router.post('/groups/:id/join', protect, joinGroup);
 router.post('/groups/:id/leave', protect, leaveGroup);
+router.get('/groups/:id/posts', getGroupPosts);
 
 export default router; 
