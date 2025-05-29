@@ -1,10 +1,56 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { MapPin, Mail, Globe, Github, Linkedin, Star, Briefcase, Clock } from 'lucide-react';
+import axios from 'axios';
+
+interface Profile {
+  name: string;
+  title: string;
+  avatar: string;
+  location: string;
+  joinDate: string;
+  rating: number;
+  reviews: number;
+  about: string;
+  skills: string[];
+  email: string;
+  website?: string;
+  socialLinks?: {
+    github?: string;
+    linkedin?: string;
+  };
+}
 
 const FreelanceProfilePage = () => {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get('/api/freelance/profile');
+        setProfile(response.data);
+        setIsOwnProfile(true); // You might want to check this based on the current user
+      } catch (err) {
+        setError('Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
@@ -72,177 +118,67 @@ const FreelanceProfilePage = () => {
                 {profile.skills.map((skill, index) => (
                   <span
                     key={index}
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="max-w-4xl mx-auto space-y-8"
-    >
-      {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-primary-600 to-primary-700"></div>
-        <div className="px-6 pb-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 space-y-4 sm:space-y-0 sm:space-x-6">
-            <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden bg-white">
-              <img
-                src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="text-center sm:text-left flex-1">
-              <h1 className="text-3xl font-bold">Alex Rivera</h1>
-              <p className="text-xl text-gray-600">Senior Full Stack Developer</p>
-            </div>
-            <div className="flex space-x-3">
-              <button className="btn-primary">
-                Contact
-              </button>
-              <button className="btn-ghost">
-                Follow
-              </button>
+                    className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* About */}
-          <section className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold mb-4">About</h2>
-            <p className="text-gray-600">
-              Full stack developer with 8+ years of experience specializing in React, Node.js, and cloud technologies. 
-              Passionate about building scalable web applications and mentoring junior developers.
-            </p>
-          </section>
-
-          {/* Skills */}
-          <section className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold mb-4">Skills</h2>
-            <div className="flex flex-wrap gap-2">
-              {[
-                'React', 'TypeScript', 'Node.js', 'MongoDB', 'AWS', 'Docker',
-                'GraphQL', 'PostgreSQL', 'Redis', 'Next.js', 'TailwindCSS'
-              ].map((skill, index) => (
-                <span key={index} className="badge-primary">{skill}</span>
-              ))}
-            </div>
-          </section>
-
-          {/* Work History */}
-          <section className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold mb-6">Work History</h2>
-            <div className="space-y-6">
-              {[1, 2, 3].map((job) => (
-                <div key={job} className="border-b border-gray-200 last:border-0 pb-6 last:pb-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-medium text-lg">Senior Frontend Developer</h3>
-                      <p className="text-gray-600">TechCorp Inc.</p>
-                      <div className="flex items-center text-gray-500 text-sm mt-1">
-                        <Clock size={16} className="mr-1" />
-                        Jan 2020 - Present
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <Star className="text-yellow-400 h-5 w-5" />
-                      <span className="ml-1 font-medium">4.9</span>
-                    </div>
-                  </div>
-                  <p className="text-gray-600 mt-3">
-                    Led the frontend development team in building a modern SaaS platform using React and TypeScript.
-                  </p>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Contact Info */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Contact</h2>
+              <div className="space-y-4">
+                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                  <Mail className="h-5 w-5 mr-2" />
+                  <a href={`mailto:${profile.email}`} className="hover:text-primary-600">
+                    {profile.email}
+                  </a>
                 </div>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Info Card */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="space-y-4">
-              <div className="flex items-center text-gray-600">
-                <MapPin size={18} className="mr-2" />
-                San Francisco, CA
-              </div>
-              <div className="flex items-center text-gray-600">
-                <Mail size={18} className="mr-2" />
-                <a href="mailto:alex@example.com" className="text-primary-600 hover:text-primary-700">
-                  alex@example.com
-                </a>
-              </div>
-              <div className="flex items-center text-gray-600">
-                <Globe size={18} className="mr-2" />
-                <a href="https://alexrivera.dev" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700">
-                  alexrivera.dev
-                </a>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 mt-4 pt-4">
-              <div className="flex space-x-3">
-                <a href="#" className="text-gray-600 hover:text-primary-600">
-                  <Github size={20} />
-                </a>
-                <a href="#" className="text-gray-600 hover:text-primary-600">
-                  <Linkedin size={20} />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Card */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="font-medium mb-4">Stats & Achievements</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Jobs Completed</span>
-                <span className="font-medium">45</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Success Rate</span>
-                <span className="font-medium">98%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">On Time</span>
-                <span className="font-medium">100%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Response Rate</span>
-                <span className="font-medium">95%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="font-medium mb-4">Recent Activity</h3>
-            <div className="space-y-4">
-              {[1, 2, 3].map((activity) => (
-                <div key={activity} className="flex items-start space-x-3">
-                  <div className="p-2 bg-primary-50 rounded-lg">
-                    <Briefcase size={16} className="text-primary-600" />
+                {profile.website && (
+                  <div className="flex items-center text-gray-600 dark:text-gray-400">
+                    <Globe className="h-5 w-5 mr-2" />
+                    <a href={profile.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary-600">
+                      {profile.website}
+                    </a>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">
-                      Completed a new project for
-                      <Link to="#" className="text-primary-600 hover:text-primary-700 mx-1">
-                        TechCorp Inc
-                      </Link>
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">2 days ago</p>
-                  </div>
-                </div>
-              ))}
+                )}
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Social</h2>
+              <div className="flex space-x-4">
+                {profile.socialLinks?.github && (
+                  <a
+                    href={profile.socialLinks.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  >
+                    <Github className="h-6 w-6" />
+                  </a>
+                )}
+                {profile.socialLinks?.linkedin && (
+                  <a
+                    href={profile.socialLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  >
+                    <Linkedin className="h-6 w-6" />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 };

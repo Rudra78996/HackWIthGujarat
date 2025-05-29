@@ -39,10 +39,35 @@ const postSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, 'Post author is required']
   },
+  category: {
+    type: String,
+    required: [true, 'Post category is required'],
+    enum: {
+      values: [
+        'Web Development',
+        'Mobile Development',
+        'UI/UX Design',
+        'Data Science',
+        'DevOps',
+        'Blockchain',
+        'AI/ML',
+        'Game Development',
+        'Cybersecurity',
+        'Cloud Computing',
+        'Digital Marketing',
+        'Content Writing',
+        'Video Production',
+        'Career',
+        'Open Source',
+        'Other'
+      ],
+      message: '{VALUE} is not a valid category'
+    }
+  },
   group: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Group',
-    required: [true, 'Group reference is required']
+    required: false
   },
   image: {
     type: String,
@@ -67,5 +92,6 @@ postSchema.index({ 'comments.author': 1 });
 postSchema.index({ 'comments.createdAt': -1 });
 postSchema.index({ title: 'text', content: 'text' });
 postSchema.index({ group: 1, createdAt: -1 });
+postSchema.index({ category: 1 });
 
 export default mongoose.model('Post', postSchema); 

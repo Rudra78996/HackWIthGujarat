@@ -223,6 +223,10 @@ const GigListingPage = () => {
       toast.success('Application submitted successfully!');
       setShowApplyModal(false);
       setSelectedGig(null);
+      setApplicationForm({
+        coverLetter: '',
+        proposedBudget: 0
+      });
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to submit application');
     } finally {
@@ -343,7 +347,8 @@ const GigListingPage = () => {
           {filteredGigs.map(gig => (
             <div
               key={gig._id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6 cursor-pointer"
+              onClick={() => navigate(`/freelance/gigs/${gig._id}`)}
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -371,7 +376,10 @@ const GigListingPage = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => handleApply(gig)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApply(gig);
+                  }}
                   className="btn-primary whitespace-nowrap"
                 >
                   Apply Now
@@ -541,7 +549,14 @@ const GigListingPage = () => {
               <div className="flex justify-end gap-4">
                 <button
                   type="button"
-                  onClick={() => setShowApplyModal(false)}
+                  onClick={() => {
+                    setShowApplyModal(false);
+                    setSelectedGig(null);
+                    setApplicationForm({
+                      coverLetter: '',
+                      proposedBudget: 0
+                    });
+                  }}
                   className="btn-ghost"
                 >
                   Cancel

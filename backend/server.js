@@ -14,6 +14,7 @@ import gigRoutes from './routes/gigRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import communityRoutes from './routes/communityRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { socketAuthMiddleware } from './middleware/socketAuthMiddleware.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 
@@ -110,12 +111,13 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/gigs', gigRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

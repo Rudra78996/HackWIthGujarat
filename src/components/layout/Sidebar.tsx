@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Briefcase, Calendar, Users, Plus, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Briefcase, Calendar, Users, Plus, ChevronDown, ChevronRight, ChevronLeft, Bot } from 'lucide-react';
 
 interface MenuItem {
   title: string;
@@ -196,7 +196,7 @@ const Sidebar = () => {
       </nav>
 
       {!isCollapsed && (
-        <div className="px-6 mt-8">
+        <div className="px-6 mt-8 space-y-4">
           <div className="p-4 bg-primary-50 dark:bg-primary-900/50 rounded-lg">
             <h4 className="font-medium text-primary-800 dark:text-primary-400 mb-2">Need Help?</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -204,6 +204,16 @@ const Sidebar = () => {
             </p>
             <Link to="/support" className="btn-primary w-full text-center text-sm">
               Contact Support
+            </Link>
+          </div>
+
+          <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/50 dark:to-indigo-900/50 rounded-lg">
+            <h4 className="font-medium text-purple-800 dark:text-purple-400 mb-2">AI Assistant</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Get instant help from our AI assistant
+            </p>
+            <Link to="/support/ai-assist" className="w-full text-center text-sm py-2 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium transition-colors">
+              Chat with AI
             </Link>
           </div>
         </div>

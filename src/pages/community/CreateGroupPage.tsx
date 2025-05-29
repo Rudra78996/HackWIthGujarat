@@ -208,6 +208,13 @@ const CreateGroupPage: React.FC = () => {
               <option value="Data Science">Data Science</option>
               <option value="DevOps">DevOps</option>
               <option value="Blockchain">Blockchain</option>
+              <option value="AI/ML">AI/ML</option>
+              <option value="Game Development">Game Development</option>
+              <option value="Cybersecurity">Cybersecurity</option>
+              <option value="Cloud Computing">Cloud Computing</option>
+              <option value="Digital Marketing">Digital Marketing</option>
+              <option value="Content Writing">Content Writing</option>
+              <option value="Video Production">Video Production</option>
               <option value="Career">Career</option>
               <option value="Open Source">Open Source</option>
               <option value="Other">Other</option>

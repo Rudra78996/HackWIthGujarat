@@ -1,129 +1,189 @@
-import User from '../models/userModel.js';
+import User from '../models/User.js';
+import asyncHandler from 'express-async-handler';
 
 // @desc    Get current user
 // @route   GET /api/users/me
 // @access  Private
-export const getCurrentUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Get current user error:', error);
-    res.status(500).json({ message: error.message });
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select('-password');
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
   }
-};
+  res.json(user);
+});
 
 // @desc    Get user by ID
 // @route   GET /api/users/:id
 // @access  Public
-export const getUserById = async (req, res) => {
-  try {
-    // Get user but exclude sensitive fields
-    const user = await User.findById(req.params.id).select('-password -email');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+const getUserById = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
+
+  // Handle special case for "me"
+  if (userId === 'me') {
+    if (!req.user) {
+      res.status(401);
+      throw new Error('Not authorized');
     }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Get user by ID error:', error);
-    res.status(500).json({ message: error.message });
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+    return res.json(user);
   }
-};
+
+  // Handle regular user ID lookup
+  const user = await User.findById(userId)
+    .select('-password')
+    .populate('skills', 'name level');
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  res.json(user);
+});
+
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private/Admin
+const getAllUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({}).select('-password');
+  res.json(users);
+});
 
 // @desc    Update user
-// @route   PUT /api/users/me
+// @route   PUT /api/users/:id
 // @access  Private
-export const updateUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Update allowed fields
-    const {
-      name,
-      bio,
-      title,
-      location,
-      website,
-      skills,
-      socialLinks,
-      profilePicture
-    } = req.body;
-    
-    if (name) user.name = name;
-    if (bio) user.bio = bio;
-    if (title) user.title = title;
-    if (location) user.location = location;
-    if (website) user.website = website;
-    if (skills) user.skills = skills;
-    if (socialLinks) user.socialLinks = { ...user.socialLinks, ...socialLinks };
-    if (profilePicture) user.profilePicture = profilePicture;
-    
-    const updatedUser = await user.save();
-    
-    res.json(updatedUser);
-  } catch (error) {
-    console.error('Update user error:', error);
-    res.status(500).json({ message: error.message });
-  }
-};
+const updateUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
 
-// @desc    Search users
-// @route   GET /api/users/search
-// @access  Public
-export const searchUsers = async (req, res) => {
-  try {
-    const { query, skills, limit = 10, page = 1 } = req.query;
-    
-    const searchQuery = {};
-    
-    // Add text search if query provided
-    if (query) {
-      searchQuery.$or = [
-        { name: { $regex: query, $options: 'i' } },
-        { bio: { $regex: query, $options: 'i' } },
-        { title: { $regex: query, $options: 'i' } }
-      ];
-    }
-    
-    // Add skills filter if provided
-    if (skills) {
-      const skillsArray = skills.split(',').map(skill => skill.trim());
-      searchQuery.skills = { $in: skillsArray };
-    }
-    
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    const users = await User.find(searchQuery)
-      .select('name title bio skills profilePicture')
-      .limit(parseInt(limit))
-      .skip(skip)
-      .sort({ createdAt: -1 });
-    
-    // Count total results for pagination
-    const total = await User.countDocuments(searchQuery);
-    
-    res.json({
-      users,
-      pagination: {
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
-      }
-    });
-  } catch (error) {
-    console.error('Search users error:', error);
-    res.status(500).json({ message: error.message });
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
   }
+
+  // Check if user is updating their own profile
+  if (user._id.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Not authorized to update this profile');
+  }
+
+  user.name = req.body.name || user.name;
+  user.email = req.body.email || user.email;
+  user.bio = req.body.bio || user.bio;
+  user.title = req.body.title || user.title;
+  user.location = req.body.location || user.location;
+  user.website = req.body.website || user.website;
+
+  if (req.body.password) {
+    user.password = req.body.password;
+  }
+
+  const updatedUser = await user.save();
+
+  res.json({
+    _id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    bio: updatedUser.bio,
+    title: updatedUser.title,
+    location: updatedUser.location,
+    website: updatedUser.website,
+  });
+});
+
+// @desc    Update user skills
+// @route   PUT /api/users/:id/skills
+// @access  Private
+const updateUserSkills = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Check if user is updating their own profile
+  if (user._id.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Not authorized to update this profile');
+  }
+
+  if (!Array.isArray(req.body.skills)) {
+    res.status(400);
+    throw new Error('Skills must be an array');
+  }
+
+  user.skills = req.body.skills;
+  const updatedUser = await user.save();
+
+  res.json(updatedUser);
+});
+
+// @desc    Update user social links
+// @route   PUT /api/users/:id/social
+// @access  Private
+const updateUserSocialLinks = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Check if user is updating their own profile
+  if (user._id.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Not authorized to update this profile');
+  }
+
+  user.socialLinks = {
+    ...user.socialLinks,
+    ...req.body,
+  };
+
+  const updatedUser = await user.save();
+
+  res.json(updatedUser);
+});
+
+// @desc    Update user profile picture
+// @route   PUT /api/users/:id/avatar
+// @access  Private
+const updateUserProfilePicture = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Check if user is updating their own profile
+  if (user._id.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('Not authorized to update this profile');
+  }
+
+  if (!req.body.avatarUrl) {
+    res.status(400);
+    throw new Error('Avatar URL is required');
+  }
+
+  user.avatar = req.body.avatarUrl;
+  const updatedUser = await user.save();
+
+  res.json(updatedUser);
+});
+
+export {
+  getCurrentUser,
+  getUserById,
+  getAllUsers,
+  updateUser,
+  updateUserSkills,
+  updateUserSocialLinks,
+  updateUserProfilePicture,
 };

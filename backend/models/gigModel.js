@@ -60,6 +60,13 @@ const gigSchema = new mongoose.Schema(
         'Data Science',
         'DevOps',
         'Blockchain',
+        'AI/ML',
+        'Game Development',
+        'Cybersecurity',
+        'Cloud Computing',
+        'Digital Marketing',
+        'Content Writing',
+        'Video Production',
         'Other'
       ]
     },

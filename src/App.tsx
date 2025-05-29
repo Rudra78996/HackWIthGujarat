@@ -7,12 +7,14 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import Loading from './components/ui/Loading';
 import MyApplicationsPage from './pages/freelance/MyApplicationsPage';
 import MyGigsPage from './pages/freelance/MyGigsPage';
+import UserProfilePage from './pages/profile/UserProfilePage';
+import SupportHomePage from './pages/support/SupportHomePage';
+import AIAssistChat from './pages/support/AIAssistChat';
 
 // Lazy loaded pages
 const HomePage = lazy(() => import('./pages/HomePage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 
 // Freelance pages
 const FreelanceHome = lazy(() => import('./pages/freelance/FreelanceHome'));
@@ -61,7 +63,7 @@ function App() {
             
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-              <Route path="profile" element={<ProfilePage />} />
+              <Route path="profile" element={<UserProfilePage />} />
               
               {/* Freelance Routes */}
               <Route path="freelance">
@@ -94,6 +96,10 @@ function App() {
                 <Route path="posts/:id" element={<PostDetail />} />
               </Route>
             </Route>
+            
+            {/* Support Routes */}
+            <Route path="support" element={<SupportHomePage />} />
+            <Route path="support/ai-assist" element={<AIAssistChat />} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFoundPage />} />

@@ -62,40 +62,29 @@ export const getPost = async (req, res) => {
 // Create post
 export const createPost = async (req, res) => {
   try {
-    const { title, content, image, groupId } = req.body;
+    const { title, content, image, category } = req.body;
     
     // Validate required fields
-    if (!title || !content || !groupId) {
+    if (!title || !content || !category) {
       return res.status(400).json({ 
-        message: 'Title, content, and groupId are required',
-        received: { title, content, groupId }
+        message: 'Title, content, and category are required',
+        received: { title, content, category }
       });
-    }
-
-    // Check if group exists
-    const group = await Group.findById(groupId);
-    if (!group) {
-      return res.status(404).json({ message: 'Group not found' });
     }
 
     const post = new Post({
       title,
       content,
       image,
-      author: req.user._id,
-      group: groupId
+      category,
+      author: req.user._id
     });
 
     await post.save();
 
-    // Add post to group's posts array
-    group.posts.push(post._id);
-    await group.save();
-
-    // Populate author and group data
+    // Populate author data
     const populatedPost = await Post.findById(post._id)
-      .populate('author', 'name')
-      .populate('group', 'name');
+      .populate('author', 'name');
 
     res.status(201).json(populatedPost);
   } catch (error) {

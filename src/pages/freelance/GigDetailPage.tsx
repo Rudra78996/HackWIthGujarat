@@ -46,6 +46,7 @@ const GigDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState('');
+  const [proposedBudget, setProposedBudget] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -57,6 +58,7 @@ const GigDetailPage = () => {
         setLoading(true);
         const response = await axios.get(`http://localhost:5000/api/gigs/${id}`);
         setGig(response.data);
+        setProposedBudget(response.data.budget);
         
         // Fetch applications if user is authenticated
         const token = localStorage.getItem('token');
@@ -132,10 +134,14 @@ const GigDetailPage = () => {
 
       await axios.post(
         `http://localhost:5000/api/gigs/${id}/apply`,
-        { message: applicationMessage },
+        { 
+          coverLetter: applicationMessage,
+          proposedBudget: proposedBudget
+        },
         {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -143,6 +149,7 @@ const GigDetailPage = () => {
       toast.success('Application submitted successfully');
       setShowApplyModal(false);
       setApplicationMessage('');
+      setProposedBudget(gig?.budget || 0);
       
       // Refresh applications
       const response = await axios.get(`http://localhost:5000/api/gigs/${id}/applications`, {
@@ -200,7 +207,7 @@ const GigDetailPage = () => {
       navigate('/login');
       return;
     }
-    // TODO: Implement apply functionality
+    setShowApplyModal(true);
   };
 
   if (loading) {
@@ -241,8 +248,9 @@ const GigDetailPage = () => {
               <div className="flex justify-between items-start mb-6">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{gig.title}</h1>
                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  gig.status === 'active' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400' :
-                  gig.status === 'completed' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-400' :
+                  gig?.status === 'Open' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400' :
+                  gig?.status === 'Completed' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-400' :
+                  gig?.status === 'In Progress' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400' :
                   'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400'
                 }`}>
                   {gig.status.charAt(0).toUpperCase() + gig.status.slice(1)}
@@ -287,56 +295,14 @@ const GigDetailPage = () => {
               </div>
             </div>
 
-            {/* Applications Section */}
+            {/* Applications Count */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Applications</h2>
-              {applications.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400">No applications yet</p>
-              ) : (
-                <div className="space-y-4">
-                  {applications.map(application => (
-                    <div
-                      key={application.id}
-                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                            {application.freelancer.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {application.freelancer.title}
-                          </p>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          application.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-400' :
-                          application.status === 'accepted' ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400' :
-                          'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400'
-                        }`}>
-                          {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                        </span>
-                      </div>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">{application.message}</p>
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleApplicationAction(application.id, 'reject')}
-                          className="btn-ghost text-red-600 dark:text-red-400"
-                          disabled={application.status !== 'pending'}
-                        >
-                          Reject
-                        </button>
-                        <button
-                          onClick={() => handleApplicationAction(application.id, 'accept')}
-                          className="btn-primary"
-                          disabled={application.status !== 'pending'}
-                        >
-                          Accept
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Applications</h2>
+                <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                  {applications.length} {applications.length === 1 ? 'Application' : 'Applications'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -347,23 +313,23 @@ const GigDetailPage = () => {
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">About the Client</h2>
               <div className="flex items-center mb-4">
                 <img
-                  src={gig.client.avatar}
-                  alt={gig.client.name}
+                  src={gig.postedBy.profilePicture || 'https://via.placeholder.com/48'}
+                  alt={gig.postedBy.name}
                   className="w-12 h-12 rounded-full"
                 />
                 <div className="ml-4">
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100">{gig.client.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{gig.client.title}</p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">{gig.postedBy.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Posted {new Date(gig.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                   <MapPin className="h-4 w-4 mr-2" />
-                  <span>{gig.client.location}</span>
+                  <span>{gig.location}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                   <Clock className="h-4 w-4 mr-2" />
-                  <span>Member since {new Date(gig.client.joinDate).toLocaleDateString()}</span>
+                  <span>Posted {new Date(gig.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
@@ -393,9 +359,10 @@ const GigDetailPage = () => {
 
       {/* Apply Modal */}
       {showApplyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Apply for this Gig</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Apply for {gig?.title}</h2>
+            
             <form onSubmit={handleSubmitApplication} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -406,13 +373,33 @@ const GigDetailPage = () => {
                   onChange={(e) => setApplicationMessage(e.target.value)}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Explain why you're the best fit for this gig..."
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Proposed Budget ($)
+                </label>
+                <input
+                  type="number"
+                  value={proposedBudget}
+                  onChange={(e) => setProposedBudget(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  min={0}
+                  required
+                />
+              </div>
+
               <div className="flex justify-end gap-4">
                 <button
                   type="button"
-                  onClick={() => setShowApplyModal(false)}
+                  onClick={() => {
+                    setShowApplyModal(false);
+                    setApplicationMessage('');
+                    setProposedBudget(gig?.budget || 0);
+                  }}
                   className="btn-ghost"
                 >
                   Cancel
