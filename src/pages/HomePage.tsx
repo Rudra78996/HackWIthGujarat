@@ -38,14 +38,14 @@ const HomePage = () => {
             <motion.h1
               variants={fadeIn}
               custom={0}
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight"
             >
               Connect, Collaborate, and Grow Together
             </motion.h1>
             <motion.p
               variants={fadeIn}
               custom={1}
-              className="text-xl text-white/90 max-w-3xl mx-auto"
+              className="text-xl text-gray-700 dark:text-white/90 max-w-3xl mx-auto"
             >
               The all-in-one platform for tech professionals to find gigs, attend events, and build community
             </motion.p>
@@ -76,8 +76,8 @@ const HomePage = () => {
               <div className="p-3 bg-primary-50 rounded-lg w-fit mb-4">
                 <Briefcase className="h-6 w-6 text-primary-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Freelance Marketplace</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Freelance Marketplace</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Post gigs, find projects, and connect with clients looking for your skills.
               </p>
               <Link
@@ -98,8 +98,8 @@ const HomePage = () => {
               <div className="p-3 bg-secondary-50 rounded-lg w-fit mb-4">
                 <Calendar className="h-6 w-6 text-secondary-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Event Management</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Event Management</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Create, discover, and join hackathons, webinars, and tech meetups.
               </p>
               <Link
@@ -120,8 +120,8 @@ const HomePage = () => {
               <div className="p-3 bg-accent-50 rounded-lg w-fit mb-4">
                 <Users className="h-6 w-6 text-accent-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Community Platform</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Community Platform</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Join tech groups, chat in real-time, and build your professional network.
               </p>
               <Link
@@ -139,7 +139,7 @@ const HomePage = () => {
       {/* How It Works */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">How It Works</h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
             Our platform brings together everything you need for tech collaboration in one place
           </p>
@@ -150,7 +150,7 @@ const HomePage = () => {
             <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold mb-6">
               1
             </div>
-            <h3 className="text-xl font-semibold mb-3">Create Your Profile</h3>
+            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">Create Your Profile</h3>
             <p className="text-gray-600 dark:text-gray-400">
               Sign up and build your professional profile showcasing your skills, experience, and portfolio.
             </p>
@@ -160,7 +160,7 @@ const HomePage = () => {
             <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold mb-6">
               2
             </div>
-            <h3 className="text-xl font-semibold mb-3">Connect & Collaborate</h3>
+            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">Connect & Collaborate</h3>
             <p className="text-gray-600 dark:text-gray-400">
               Find gigs, join events, and engage with the community through groups and direct messages.
             </p>
@@ -170,7 +170,7 @@ const HomePage = () => {
             <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center text-primary-600 dark:text-primary-400 text-2xl font-bold mb-6">
               3
             </div>
-            <h3 className="text-xl font-semibold mb-3">Grow Your Network</h3>
+            <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-gray-100">Grow Your Network</h3>
             <p className="text-gray-600 dark:text-gray-400">
               Build relationships, gain visibility, and unlock new opportunities in the tech industry.
             </p>
@@ -183,7 +183,7 @@ const HomePage = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Featured Opportunities</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900 dark:text-gray-100">Featured Opportunities</h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
                 Discover top gigs, upcoming events, and active communities in your area of expertise.
               </p>
@@ -224,7 +224,7 @@ const HomePage = () => {
                     <Calendar className="h-5 w-5 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
-                    <h4 className="font-medium dark:text-gray-200">Upcoming Event</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-200">Upcoming Event</h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">React Developer Summit</p>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ const HomePage = () => {
       {/* Testimonials */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">What Our Users Say</h2>
           <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
             Join thousands of tech professionals who've found success on our platform
           </p>
@@ -279,11 +279,11 @@ const HomePage = () => {
                   className="h-12 w-12 rounded-full object-cover mr-4"
                 />
                 <div>
-                  <h4 className="font-medium">{testimonial.name}</h4>
-                  <p className="text-sm text-gray-500">{testimonial.role}</p>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">{testimonial.name}</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
                 </div>
               </div>
-              <p className="text-gray-600 italic">"{testimonial.quote}"</p>
+              <p className="text-gray-600 dark:text-gray-400 italic">"{testimonial.quote}"</p>
             </div>
           ))}
         </div>
