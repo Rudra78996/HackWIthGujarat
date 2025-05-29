@@ -45,15 +45,20 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function App() {
   const location = useLocation();
-  const { checkAuth } = useAuthStore();
+  const { checkAuth, isLoading } = useAuthStore();
   
   useEffect(() => {
+    // Check authentication status on app initialization
     checkAuth();
   }, [checkAuth]);
 
   return (
     <AnimatePresence mode="wait">
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loading />
+        </div>
+      }>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />
