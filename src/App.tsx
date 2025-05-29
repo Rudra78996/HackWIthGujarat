@@ -27,6 +27,7 @@ const EventsHome = lazy(() => import('./pages/events/EventsHome'));
 const EventDetailPage = lazy(() => import('./pages/events/EventDetailPage'));
 const CreateEventPage = lazy(() => import('./pages/events/CreateEventPage'));
 const ManageEventPage = lazy(() => import('./pages/events/ManageEventPage'));
+const MyEventsPage = lazy(() => import('./pages/events/MyEventsPage'));
 
 // Community pages
 const CommunityHome = lazy(() => import('./pages/community/CommunityHome'));
@@ -81,6 +82,7 @@ function App() {
                 <Route path=":id" element={<EventDetailPage />} />
                 <Route path="create" element={<CreateEventPage />} />
                 <Route path="manage/:id" element={<ManageEventPage />} />
+                <Route path="my-events" element={<MyEventsPage />} />
               </Route>
               
               {/* Community Routes */}
