@@ -42,9 +42,11 @@ const MyEventsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'organized' | 'registered'>('organized');
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
 
   const fetchMyEvents = async () => {
+    if (!user) return;
+    
     try {
       const response = await api.get('/events/my-events');
       setOrganizedEvents(response.data.organized);
@@ -62,10 +64,10 @@ const MyEventsPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchMyEvents();
-    } else {
+    } else if (!authLoading) {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const TabButton = ({ tab, icon: Icon, label, count }: { tab: 'organized' | 'registered', icon: any, label: string, count: number }) => (
     <button
@@ -88,7 +90,7 @@ const MyEventsPage: React.FC = () => {
     </button>
   );
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-12">
