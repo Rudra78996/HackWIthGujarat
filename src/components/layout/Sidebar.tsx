@@ -92,11 +92,11 @@ const Sidebar = () => {
             path: '/community/groups',
             active: location.pathname === '/community/groups',
           },
-          {
-            title: 'Direct Messages',
-            path: '/community/messages',
-            active: location.pathname === '/community/messages',
-          },
+          // {
+          //   title: 'Direct Messages',
+          //   path: '/community/messages',
+          //   active: location.pathname === '/community/messages',
+          // },
           {
             title: 'Create Group',
             path: '/community/create-group',

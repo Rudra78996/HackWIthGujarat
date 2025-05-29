@@ -11,7 +11,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
-  checkAuth: () => void;
+  checkAuth: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true, // Start with loading true
 
       login: async (email, password) => {
         try {
@@ -79,14 +79,14 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         localStorage.removeItem('token');
         delete api.defaults.headers.common['Authorization'];
-        set({ token: null, user: null, isAuthenticated: false });
+        set({ token: null, user: null, isAuthenticated: false, isLoading: false });
       },
 
-      checkAuth: () => {
+      checkAuth: async () => {
         const token = localStorage.getItem('token');
         
         if (!token) {
-          set({ isAuthenticated: false, user: null, token: null });
+          set({ isAuthenticated: false, user: null, token: null, isLoading: false });
           return;
         }
         
@@ -103,19 +103,21 @@ export const useAuthStore = create<AuthState>()(
           // Token valid, set auth headers
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
-          // Fetch current user data
-          api.get('/users/me')
-            .then(response => {
-              set({ 
-                user: response.data, 
-                isAuthenticated: true,
-                token 
-              });
-            })
-            .catch(() => {
-              get().logout();
+          // Set loading state before fetching user data
+          set({ isLoading: true });
+          
+          try {
+            // Fetch current user data
+            const response = await api.get('/users/me');
+            set({ 
+              user: response.data, 
+              isAuthenticated: true,
+              token,
+              isLoading: false
             });
-            
+          } catch (error) {
+            get().logout();
+          }
         } catch (error) {
           get().logout();
         }
